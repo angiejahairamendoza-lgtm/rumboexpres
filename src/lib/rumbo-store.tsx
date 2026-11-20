@@ -1,0 +1,64 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { Finanzas } from "./rumbo-data";
+import type { Habilidad, Semana } from "./rumbo-ai.functions";
+
+export type Estado = {
+  pantalla: string;
+  who5: (number | null)[];
+  jornada: number | null;
+  edad: number | null;
+  situacion: number | null;
+  necesidad: number | null;
+  marcha: number | null;
+  proyecto: string;
+  anio: number | null;
+  claridad: number;
+  actividades: number[];
+  valores: number[];
+  condiciones: number[];
+  tareas: string[];
+  habilidades: Habilidad[] | null;
+  favoritas: number[];
+  frase: string;
+  finanzas: Finanzas | null;
+  finanzasSaltado: boolean;
+  ruta: Semana[] | null;
+  rutaFecha: string | null;
+  calificacion: number | null;
+};
+
+export const estadoInicial = (): Estado => ({
+  pantalla: "bienvenida", who5: [null, null, null, null, null], jornada: null, edad: null, situacion: null,
+  necesidad: null, marcha: null, proyecto: "", anio: null, claridad: 5, actividades: [], valores: [],
+  condiciones: [], tareas: ["", "", ""], habilidades: null, favoritas: [], frase: "", finanzas: null,
+  finanzasSaltado: false, ruta: null, rutaFecha: null, calificacion: null,
+});
+
+const KEY = "rumbo-expres";
+type Ctx = { s: Estado; set: (p: Partial<Estado>) => void; reset: () => void; listo: boolean };
+const C = createContext<Ctx | null>(null);
+
+export function RumboProvider({ children }: { children: ReactNode }) {
+  const [s, setS] = useState<Estado>(estadoInicial);
+  const [listo, setListo] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(KEY);
+      if (raw) setS({ ...estadoInicial(), ...JSON.parse(raw) });
+    } catch { /* ignorar */ }
+    setListo(true);
+  }, []);
+  useEffect(() => {
+    if (listo) sessionStorage.setItem(KEY, JSON.stringify(s));
+  }, [s, listo]);
+  return (
+    <C.Provider value={{ s, listo, set: (p) => setS((prev) => ({ ...prev, ...p })), reset: () => setS(estadoInicial()) }}>
+      {children}
+    </C.Provider>
+  );
+}
+export function useRumbo() {
+  const c = useContext(C);
+  if (!c) throw new Error("RumboProvider faltante");
+  return c;
+}

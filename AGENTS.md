@@ -28,3 +28,6 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- RUMBO flow state lives only in browser sessionStorage (src/lib/rumbo-store.tsx); the only DB write is one anonymous insert-only row in `resultados` on rating — privacy requirement of the PRD.
+- AI calls go through server functions in src/lib/rumbo-ai.functions.ts using strict json_schema output; scoring rules (energy, profile, interests, margin) are pure functions in src/lib/rumbo-data.ts covered by src/test/rumbo-rules.test.ts.

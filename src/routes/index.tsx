@@ -1,23 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Flow } from "@/components/rumbo/Flow";
+import { RumboProvider } from "@/lib/rumbo-store";
 
-// The home route ships no og:image, so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "RUMBO Exprés — Tu ruta de 30 días después del call center" },
+      { name: "description", content: "En 25 minutos descubre lo que sí sabes hacer y sal con una ruta de 30 días. Sin cuenta y sin nombre." },
+      { property: "og:title", content: "RUMBO Exprés — Tu ruta de 30 días" },
+      { property: "og:description", content: "Tus habilidades de call center, traducidas al mercado, y una ruta de 30 días. Programa RUMBO." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: () => <RumboProvider><Flow empresa={null} /></RumboProvider>,
 });
-
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
