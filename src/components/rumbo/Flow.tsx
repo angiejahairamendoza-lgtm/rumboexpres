@@ -464,7 +464,7 @@ function RutaVista({ ruta, fecha }: { ruta: NonNullable<Estado["ruta"]>; fecha: 
       {ruta.map((sem, i) => (
         <section key={i} className="rounded-2xl border-2 border-border p-4">
           <p className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">Semana {i + 1}</p>
-          <h2 className="text-lg font-extrabold leading-snug">{sem.titulo}</h2>
+          <h2 className="text-lg font-extrabold leading-snug">{D.tituloSemana(sem.titulo)}</h2>
           <div className="mt-3 space-y-3">
             {sem.pasos.map((p, j) => (
               <div key={j} className="rounded-xl bg-field p-4">

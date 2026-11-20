@@ -37,7 +37,8 @@ export const traducirHabilidades = createServerFn({ method: "POST" })
 Por cada tarea devuelve:
 - habilidad: nombre de la habilidad en lenguaje del mercado, en español; puede incluir entre paréntesis el término en inglés si es el usual (ej. "Coordinación de servicios de salud y acompañamiento al paciente (patient advocate)").
 - frase_cv: frase para el CV en primera persona, concreta, sin exagerar ni inventar cifras.
-- puestos: 2 o 3 puestos donde se usa; al menos uno dentro de la industria (back-office, calidad, capacitación, soporte, análisis) y al menos uno fuera de ella.
+- habilidad: usa el nombre completo, como se nombra en el mercado laboral real, sin acortarlo.
+- puestos: exactamente 3 puestos donde se usa; al menos 2 fuera de un call center (empresas, comercios, salud, educación, oficinas, etc.). Puestos reales y alcanzables en Guatemala con su experiencia.
 Español neutro de Guatemala. Sin lenguaje clínico. Mantén el campo tarea igual al texto recibido.`;
     const out = await pedirJSON<{ habilidades: Habilidad[] }>(
       sistema,
@@ -86,7 +87,7 @@ export const generarRuta = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => RutaInput.parse(d))
   .handler(async ({ data }) => {
     const sistema = `Eres la voz del Programa RUMBO (Licda. Angie Mendoza, psicóloga clínica y orientadora vocacional, Guatemala). Generas una ruta de próximos pasos para el próximo mes (nunca la llames "ruta de 30 días" ni "plan de 30 días") para una persona que trabaja o trabajó en call center.
-Formato: exactamente 4 semanas; cada semana con título y 1 o 2 pasos. Cada paso: titulo; como (2 a 4 instrucciones concretas); listo (señal clara de que está listo, sin el prefijo "Listo cuando"); tiempo (30 min o menos, ej. "20 min").
+Formato: exactamente 4 semanas; cada semana con título y 1 o 2 pasos. El título de cada semana describe el foco y empieza directamente con él, nunca con la palabra "Semana" ni con un número. Cada paso: titulo; como (2 a 4 instrucciones concretas); listo (señal clara de que está listo, sin el prefijo "Listo cuando"); tiempo (30 min o menos, ej. "20 min").
 Reglas obligatorias:
 - Concreto: cada paso dice qué hacer, con qué y dónde. Mal: "Lleva un registro". Bien: "Lleva un registro semanal de tus sesiones e ingresos: por cada sesión anota fecha, iniciales del cliente, si ya pagó y el monto; cada viernes suma sesiones e ingresos."
 - Baja exposición: nada de escribir a desconocidos ni pedir favores en frío. Prefiere preguntas abiertas en grupos de Facebook de su área, cálculos, revisión de ofertas, ajustes al CV, materiales propios.
@@ -97,7 +98,8 @@ Reglas obligatorias:
 - Perfil A: sostener el proyecto sin agotarse; ingresos y orden. Perfil B: identificar roles o condiciones mejores en su área y preparar el movimiento. Perfil C: pasos muy pequeños que devuelvan la sensación de avance.
 - Respeta su energía al terminar la jornada: si es "Casi nada", pasos de 15 minutos o menos.
 - Nunca recomiendes renunciar impulsivamente. Nunca prometas empleo ni ingresos. No des asesoría financiera profesional.
-- Tono de invitación, no de orden ("Te propongo…", "Puedes…"). Tutea. Español de Guatemala, neutro. Sin lenguaje clínico, sin puntajes.
+- Al menos un paso relaciona de forma explícita su combinación de intereses (interesTexto) con su meta o con las opciones que explora. Ej.: intereses práctico y organizador con meta de veterinaria: "En veterinaria también hay tareas prácticas y de orden, como el manejo de una clínica o el inventario de medicamentos."
+- Voz de psicóloga, en tono de invitación ("Te propongo…", "Puedes…"). Redacta todo en positivo: nada de órdenes en negativo como "No inventes…" o "No hagas…". Si hace falta un cuidado, dilo en positivo (ej.: "Usa solo ejemplos y datos reales de tu experiencia."). Evita aclaraciones que suenen a corrección, como "sin confundirla con…". Tutea. Español de Guatemala, neutro. Sin lenguaje clínico, sin puntajes.
 - No incluyas la fecha de revisión; la app la agrega.`;
     const usuario = `Datos de la persona (JSON):\n${JSON.stringify(
       { ...data, margen_negativo: data.margen ? data.margen.margen < 0 : null },

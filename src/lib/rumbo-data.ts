@@ -174,10 +174,17 @@ export const EJEMPLOS_TAREAS = ["Calmo a clientes molestos", "Atiendo en inglés
 /** Frase para presentarse: con las favoritas si las hay; si no, con las primeras habilidades. */
 export function frasePresentacion(habilidades: string[], favoritas: number[]) {
   const idx = favoritas.length ? favoritas : habilidades.slice(0, 3).map((_, i) => i);
-  const n = idx.map((i) => habilidades[i]?.split("(")[0]?.trim().toLowerCase() ?? "").filter(Boolean);
+  const n = idx.map((i) => habilidades[i]?.trim() ?? "").filter(Boolean).map((h) => h.charAt(0).toLowerCase() + h.slice(1));
   if (!n.length) return "";
-  const lista = n.length === 1 ? n[0] : `${n.slice(0, -1).join(", ")} ${conjuncion(n[n.length - 1]!)} ${n[n.length - 1]}`;
-  return `Soy una persona que sabe ${lista}.`;
+  const ultima = n[n.length - 1]!;
+  const conY = n.length > 2 && n.some((h) => /\s(y|e)\s/.test(h));
+  const lista = n.length === 1 ? ultima : `${n.slice(0, -1).join(", ")}${conY ? "," : ""} ${conjuncion(ultima)} ${ultima}`;
+  return `Tengo experiencia en ${lista}.`;
+}
+
+/** Quita el prefijo "Semana N:" / "Semana N -" que a veces trae el título de la IA. */
+export function tituloSemana(t: string) {
+  return t.replace(/^\s*semana\s*\d+\s*[:.\-–—·]?\s*/i, "").trim() || t.trim();
 }
 
 export type Finanzas = { ingreso: number; gastos: number; ahorros: number };

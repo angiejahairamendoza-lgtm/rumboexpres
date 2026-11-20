@@ -64,7 +64,7 @@ describe("texto de intereses", () => {
   });
 });
 
-import { frasePresentacion, ENERGIA_JORNADA, EJEMPLOS_TAREAS } from "@/lib/rumbo-data";
+import { frasePresentacion, tituloSemana, ENERGIA_JORNADA, EJEMPLOS_TAREAS } from "@/lib/rumbo-data";
 import { leerGuardado, VENCE_MS } from "@/lib/rumbo-store";
 
 describe("ajustes de la prueba en celular", () => {
@@ -75,10 +75,20 @@ describe("ajustes de la prueba en celular", () => {
     expect(EJEMPLOS_TAREAS).toEqual(["Calmo a clientes molestos", "Atiendo en inglés"]);
   });
   it("frase sin favoritas usa las primeras habilidades", () => {
-    expect(frasePresentacion(["Manejo de conflictos", "Multitarea", "Inglés", "Otra"], [])).toBe("Soy una persona que sabe manejo de conflictos, multitarea e inglés.");
+    expect(frasePresentacion(["Manejo de conflictos", "Multitarea", "Inglés", "Otra"], [])).toBe("Tengo experiencia en manejo de conflictos, multitarea e inglés.");
   });
   it("frase con 1 favorita usa solo esa", () => {
-    expect(frasePresentacion(["A", "Liderazgo"], [1])).toBe("Soy una persona que sabe liderazgo.");
+    expect(frasePresentacion(["A", "Liderazgo"], [1])).toBe("Tengo experiencia en liderazgo.");
+  });
+  it("frase: nombres completos, ', y' cuando ya hay 'y', solo la primera letra en minúscula", () => {
+    expect(frasePresentacion(["Soporte técnico y resolución de problemas", "Facilitación de la comunicación y acompañamiento a personas mayores", "Atención al cliente y comunicación en inglés"], []))
+      .toBe("Tengo experiencia en soporte técnico y resolución de problemas, facilitación de la comunicación y acompañamiento a personas mayores, y atención al cliente y comunicación en inglés.");
+    expect(frasePresentacion(["Reportes en Excel (reporting)", "Inglés"], [])).toBe("Tengo experiencia en reportes en Excel (reporting) e inglés.");
+  });
+  it("quita el prefijo 'Semana N' del título de la IA", () => {
+    expect(tituloSemana("Semana 1: Explorar opciones")).toBe("Explorar opciones");
+    expect(tituloSemana("Semana 2 - Ordenar")).toBe("Ordenar");
+    expect(tituloSemana("Explorar opciones")).toBe("Explorar opciones");
   });
   it("el avance guardado vence a las 24 horas", () => {
     const raw = JSON.stringify({ t: 0, s: { pantalla: "valores" } });

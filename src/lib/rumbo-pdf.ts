@@ -1,4 +1,5 @@
 import type { Habilidad, Semana } from "./rumbo-ai.functions";
+import { tituloSemana, WHATSAPP, WEB } from "./rumbo-data";
 
 export type DatosPDF = {
   energiaBaja: boolean;
@@ -116,7 +117,7 @@ export async function descargarPDF(d: DatosPDF) {
     s.pasos.forEach((p, j) => {
       n += 1;
       const X = M + 12, A = ANCHO - 12;
-      const sem = j === 0 ? lineas(`Semana ${i + 1} · ${s.titulo}`, 9.5, A, true) : [];
+      const sem = j === 0 ? lineas(`Semana ${i + 1} · ${tituloSemana(s.titulo)}`, 9.5, A, true) : [];
       const tl = lineas(`${p.titulo} (${p.tiempo})`, 11.5, A, true);
       const cl = p.como.map((c) => lineas(`•  ${c}`, 10.5, A - 3));
       const ll = lineas(`Listo cuando: ${p.listo}`, 10.5, A, false);
@@ -139,7 +140,17 @@ export async function descargarPDF(d: DatosPDF) {
 
   seccion("Si quieres recorrer esta ruta acompañado/a", 30);
   parrafo("Este es un primer paso. En el Programa RUMBO trabajas tu ruta con la Licda. Angie Mendoza, psicóloga y orientadora vocacional, en 4 sesiones en línea.");
-  parrafo("WhatsApp 5437-2899 · angiemendoza.lovable.app");
+  asegurar(lh(11));
+  doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(...NAVY);
+  const wa = "WhatsApp 5437-2899", sep = "  ·  ", web = "angiemendoza.lovable.app";
+  doc.textWithLink(wa, M, y, { url: WHATSAPP });
+  const xw = M + doc.getTextWidth(wa);
+  doc.setDrawColor(...NAVY); doc.setLineWidth(0.2); doc.line(M, y + 0.8, xw, y + 0.8);
+  doc.setTextColor(...TEXTO); doc.text(sep, xw, y);
+  const xs = xw + doc.getTextWidth(sep);
+  doc.setTextColor(...NAVY); doc.textWithLink(web, xs, y, { url: WEB });
+  doc.line(xs, y + 0.8, xs + doc.getTextWidth(web), y + 0.8);
+  y += lh(11) + 1.5;
   parrafo("Programa completo: Q1,000.", { size: 9, color: GRIS });
   parrafo("Esta herramienta no reemplaza un proceso terapéutico.", { size: 9, color: GRIS });
 
@@ -149,7 +160,9 @@ export async function descargarPDF(d: DatosPDF) {
     doc.setPage(i);
     doc.setDrawColor(220, 226, 232); doc.setLineWidth(0.2); doc.line(M, H - 15, W - M, H - 15);
     doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...GRIS);
-    doc.text("Licda. Angie Mendoza · Psicóloga y orientadora vocacional · Colegiada 6959 · WhatsApp 5437-2899", M, H - 10);
+    const pie = "Licda. Angie Mendoza · Psicóloga y orientadora vocacional · Colegiada 6959 · ";
+    doc.text(pie, M, H - 10);
+    doc.textWithLink("WhatsApp 5437-2899", M + doc.getTextWidth(pie), H - 10, { url: WHATSAPP });
     doc.text(`${i} / ${total}`, W - M, H - 10, { align: "right" });
   }
   doc.save("mi-ruta-rumbo.pdf");
