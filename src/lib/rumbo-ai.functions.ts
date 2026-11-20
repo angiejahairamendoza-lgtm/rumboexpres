@@ -74,7 +74,7 @@ const RutaInput = z.object({
   energiaJornada: str(20),
   claridad: z.number().min(0).max(10),
   intereses: z.array(str(30)).max(2),
-  interesTexto: str(400),
+  interesTexto: str(500),
   valores: z.array(str(60)).max(3),
   condiciones: z.array(str(60)).max(2),
   favoritas: z.array(str(200)).max(3),

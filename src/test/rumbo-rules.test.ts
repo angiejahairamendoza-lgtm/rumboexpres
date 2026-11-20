@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcularEnergia, calcularPerfil, calcularMargen, margenTexto, topTipos } from "@/lib/rumbo-data";
+import { calcularEnergia, calcularPerfil, calcularMargen, margenTexto, topTipos, interesTexto, TIPOS } from "@/lib/rumbo-data";
 
 describe("reglas RUMBO", () => {
   it("energía baja cuando la suma es menor a 13", () => {
@@ -20,5 +20,46 @@ describe("reglas RUMBO", () => {
   });
   it("los 2 tipos con más marcas", () => {
     expect(topTipos([2, 3, 10, 11])).toEqual(["Investigador", "Organizador"]);
+  });
+});
+
+describe("texto de intereses", () => {
+  const todas = TIPOS.flatMap((a, i) => TIPOS.slice(i + 1).map((b) => [a, b] as [typeof a, typeof b]));
+
+  it("usa 'e' antes de una palabra con sonido i", () => {
+    expect(interesTexto("Práctico", "Investigador")).toMatch(/^Hacer con las manos e investigar:/);
+    expect(interesTexto("Creativo", "Emprendedor")).toContain("Crear e influir:");
+    expect(interesTexto("Social", "Emprendedor")).toContain("Ayudar e influir:");
+    expect(interesTexto("Práctico", "Creativo")).toContain("funcionen e imaginar");
+  });
+  it("nunca deja 'y' antes de una palabra con sonido i", () => {
+    expect(interesTexto("Práctico", "Investigador")).not.toContain(" y investigar");
+    expect(interesTexto("Social", "Emprendedor")).not.toContain(" y influir");
+  });
+  it("las 3 combinaciones opuestas suman la frase de roles puente, antes de los ejemplos", () => {
+    const opuestas: ["Práctico" | "Investigador" | "Creativo", "Social" | "Emprendedor" | "Organizador"][] = [
+      ["Práctico", "Social"],
+      ["Investigador", "Emprendedor"],
+      ["Creativo", "Organizador"],
+    ];
+    for (const [a, b] of opuestas) {
+      const t = interesTexto(a, b);
+      const puente = t.indexOf(" Tienes intereses que pocas personas combinan; eso puede ser una ventaja en roles puente.");
+      expect(puente).toBeGreaterThan(-1);
+      expect(puente).toBeLessThan(t.indexOf(" Estos son ejemplos, no un destino."));
+    }
+  });
+  it("las demás combinaciones no llevan la frase de roles puente", () => {
+    const t = interesTexto("Práctico", "Investigador");
+    expect(t).not.toContain("roles puente");
+    expect(t).toContain("Estos son ejemplos, no un destino. Tu combinación puede vivirse en muchos trabajos distintos.");
+  });
+  it("las 15 combinaciones tienen áreas y caben en el límite de la función de la ruta", () => {
+    expect(todas.length).toBe(15);
+    for (const [a, b] of todas) {
+      const t = interesTexto(a, b);
+      expect(t).not.toContain("undefined");
+      expect(t.length).toBeLessThanOrEqual(500);
+    }
   });
 });

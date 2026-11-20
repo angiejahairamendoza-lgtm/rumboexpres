@@ -95,37 +95,37 @@ export const ACTIVIDADES: { label: string; tipo: Tipo }[] = [
 ];
 
 const VERBO: Record<Tipo, string> = {
-  Práctico: "resolver con las manos",
+  Práctico: "hacer con las manos",
   Investigador: "investigar",
   Creativo: "crear",
   Social: "ayudar",
-  Emprendedor: "liderar",
+  Emprendedor: "influir",
   Organizador: "organizar",
 };
 const GUSTO: Record<Tipo, string> = {
   Práctico: "hacer que las cosas funcionen",
-  Investigador: "entender las cosas a fondo",
-  Creativo: "imaginar formas nuevas de hacerlas",
-  Social: "apoyar a otras personas",
-  Emprendedor: "mover a otros hacia una meta",
-  Organizador: "ponerlas en orden",
+  Investigador: "entender a fondo por qué pasan las cosas",
+  Creativo: "imaginar formas nuevas de hacer o expresar algo",
+  Social: "apoyar y acompañar a otras personas",
+  Emprendedor: "convencer y mover a otros hacia una meta",
+  Organizador: "poner orden en datos, procesos y detalles",
 };
 const AREAS: Record<string, string> = {
-  "Práctico|Investigador": "soporte técnico de segundo nivel, mantenimiento de sistemas, control de calidad técnico y diagnóstico de equipos",
-  "Práctico|Creativo": "producción audiovisual, fotografía, diseño de espacios y elaboración de productos artesanales",
-  "Práctico|Social": "soporte técnico en sitio, capacitación práctica, servicios de salud y atención técnica a clientes",
-  "Práctico|Emprendedor": "servicios técnicos por cuenta propia, ventas técnicas, coordinación de instalaciones y logística",
-  "Práctico|Organizador": "inventarios, logística, administración de bodegas y control de procesos operativos",
-  "Investigador|Creativo": "investigación de usuarios (UX research), análisis de contenido, marketing digital y redacción técnica",
-  "Investigador|Social": "gestión de casos, investigación social, orientación a usuarios y análisis de experiencia del cliente",
-  "Investigador|Emprendedor": "análisis de negocio, inteligencia comercial, consultoría y planificación estratégica",
-  "Investigador|Organizador": "análisis de calidad, gestión de casos, investigación aplicada y administración de servicios",
-  "Creativo|Social": "capacitación, diseño de contenidos educativos, comunicación interna y gestión de comunidades",
-  "Creativo|Emprendedor": "marketing, emprendimiento de contenido, ventas creativas y desarrollo de marca",
-  "Creativo|Organizador": "gestión de redes sociales, producción de contenido, diseño de procesos y documentación",
-  "Social|Emprendedor": "liderazgo de equipos, reclutamiento, ventas consultivas y experiencia del cliente",
-  "Social|Organizador": "recursos humanos, administración educativa, coordinación de servicios y atención a pacientes",
-  "Emprendedor|Organizador": "supervisión de operaciones, gestión de proyectos, administración y workforce management",
+  "Práctico|Investigador": "soporte técnico de segundo nivel, mantenimiento de sistemas y redes, control de calidad técnico, diagnóstico y reparación de equipos",
+  "Práctico|Creativo": "producción audiovisual, fotografía, diseño de espacios, productos artesanales o gastronómicos",
+  "Práctico|Social": "soporte técnico en sitio, instrucción técnica práctica, auxiliar de enfermería o terapia física, servicio técnico al cliente",
+  "Práctico|Emprendedor": "negocio propio de servicios técnicos, ventas técnicas, coordinación de instalaciones, supervisión de cuadrillas",
+  "Práctico|Organizador": "control de inventarios, administración de bodegas, logística y despacho, control de procesos operativos",
+  "Investigador|Creativo": "investigación de usuarios (UX research), diseño de experiencia (UX), análisis y visualización de datos, redacción técnica",
+  "Investigador|Social": "investigación social, análisis de experiencia del cliente (CX), asesoría especializada, educación en salud",
+  "Investigador|Emprendedor": "análisis de negocio, inteligencia comercial, consultoría, planificación estratégica",
+  "Investigador|Organizador": "aseguramiento de calidad (QA), análisis de datos y reportes, investigación aplicada, auditoría de procesos",
+  "Creativo|Social": "capacitación, diseño de contenidos educativos, comunicación interna, gestión de comunidades",
+  "Creativo|Emprendedor": "marketing, creación de contenido como negocio, ventas creativas, desarrollo de marca",
+  "Creativo|Organizador": "gestión de redes sociales, calendario y producción de contenido, diseño instruccional, bases de conocimiento",
+  "Social|Emprendedor": "liderazgo de equipos, reclutamiento, ventas consultivas, éxito del cliente (customer success)",
+  "Social|Organizador": "recursos humanos, administración educativa, coordinación de servicios, gestión de casos",
+  "Emprendedor|Organizador": "supervisión de operaciones, gestión de proyectos, administración, planificación de personal (workforce management)",
 };
 
 export function topTipos(marcadas: number[]): [Tipo, Tipo] {
@@ -138,10 +138,27 @@ export function topTipos(marcadas: number[]): [Tipo, Tipo] {
   return [orden[0]!, orden[1]!];
 }
 
+/** "e" en lugar de "y" cuando la palabra siguiente suena "i" (i-, hi-). */
+export function conjuncion(siguiente: string) {
+  return /^(hi|i)/i.test(siguiente.trim()) ? "e" : "y";
+}
+
+/** Combinaciones poco frecuentes: intereses que se contraponen. */
+const OPUESTOS = new Set(["Práctico|Social", "Investigador|Emprendedor", "Creativo|Organizador"]);
+
 export function interesTexto(a: Tipo, b: Tipo) {
   const [x, y] = TIPOS.indexOf(a) < TIPOS.indexOf(b) ? [a, b] : [b, a];
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-  return `${cap(VERBO[x])} y ${VERBO[y]}: te atrae ${GUSTO[x]} y ${GUSTO[y]}. Se combinan en ${AREAS[`${x}|${y}`]}.`;
+  const clave = `${x}|${y}`;
+  const puente = OPUESTOS.has(clave)
+    ? " Tienes intereses que pocas personas combinan; eso puede ser una ventaja en roles puente."
+    : "";
+  return (
+    `${cap(VERBO[x])} ${conjuncion(VERBO[y])} ${VERBO[y]}: ` +
+    `te atrae ${GUSTO[x]} ${conjuncion(GUSTO[y])} ${GUSTO[y]}. ` +
+    `Se combinan en ${AREAS[clave]}.${puente} ` +
+    "Estos son ejemplos, no un destino. Tu combinación puede vivirse en muchos trabajos distintos."
+  );
 }
 
 export const VALORES = [
