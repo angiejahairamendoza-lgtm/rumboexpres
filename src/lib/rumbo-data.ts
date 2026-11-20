@@ -15,7 +15,7 @@ export const WHO5 = [
   "Mi vida diaria ha tenido cosas que me interesan.",
 ];
 
-export const ENERGIA_JORNADA = ["Mucha", "Algo", "Casi nada"];
+export const ENERGIA_JORNADA = ["Mucha", "Media", "Casi nada"];
 export const EDADES = ["18–24", "25–29", "30–34", "35–39", "40 o más"];
 export const SITUACIONES = [
   "Trabajo en un call center",
@@ -28,17 +28,17 @@ export type Perfil = "A" | "B" | "C";
 
 export const NECESIDADES: { label: string; perfil: Perfil; economico?: boolean }[] = [
   { label: "Avanzar hacia una meta que ya tengo", perfil: "A" },
-  { label: "Mejores condiciones en lo que ya hago (rol, horario, desgaste)", perfil: "B" },
+  { label: "Un mejor puesto, horario o menos desgaste en el trabajo que ya tengo", perfil: "B" },
   { label: "Que lo que hago me dé suficientes ingresos", perfil: "A", economico: true },
   { label: "Descubrir qué quiero hacer", perfil: "C" },
 ];
 export const EN_MARCHA: { label: string; perfil: Perfil }[] = [
   { label: "Sí: estudio o tengo un proyecto propio", perfil: "A" },
-  { label: "Sé qué área o puesto me interesa, pero no he empezado", perfil: "B" },
+  { label: "Sé qué área o puesto me interesa, pero no he avanzado", perfil: "B" },
   { label: "Todavía nada", perfil: "C" },
 ];
 export const UN_ANIO: { label: string; perfil: Perfil }[] = [
-  { label: "Tranquilo/a, si mi otro proyecto avanzó", perfil: "A" },
+  { label: "Tranquilo/a, si mi proyecto avanzó", perfil: "A" },
   { label: "Con ganas de moverme a otra área", perfil: "B" },
   { label: "Estancado/a, sin avanzar nada", perfil: "C" },
   { label: "No lo he pensado", perfil: "C" },
@@ -166,13 +166,19 @@ export const VALORES = [
   "Equilibrio con mi vida personal", "Crear cosas nuevas", "Trabajar en equipo", "Prestaciones y seguridad",
 ];
 export const CONDICIONES = [
-  "Sin monitoreo constante", "Horario fijo", "Trabajo remoto", "Menos llamadas", "Un espacio tranquilo",
+  "Libertad y privacidad", "Horario fijo", "Trabajo remoto", "Menos llamadas", "Un espacio tranquilo",
   "Ingresos más altos aunque sean variables",
 ];
-export const EJEMPLOS_TAREAS = [
-  "Calmo a clientes molestos", "Manejo varios sistemas a la vez", "Cumplo metas de tiempo y calidad",
-  "Atiendo en inglés", "Capacito a compañeros nuevos",
-];
+export const EJEMPLOS_TAREAS = ["Calmo a clientes molestos", "Atiendo en inglés"];
+
+/** Frase para presentarse: con las favoritas si las hay; si no, con las primeras habilidades. */
+export function frasePresentacion(habilidades: string[], favoritas: number[]) {
+  const idx = favoritas.length ? favoritas : habilidades.slice(0, 3).map((_, i) => i);
+  const n = idx.map((i) => habilidades[i]?.split("(")[0]?.trim().toLowerCase() ?? "").filter(Boolean);
+  if (!n.length) return "";
+  const lista = n.length === 1 ? n[0] : `${n.slice(0, -1).join(", ")} ${conjuncion(n[n.length - 1]!)} ${n[n.length - 1]}`;
+  return `Soy una persona que sabe ${lista}.`;
+}
 
 export type Finanzas = { ingreso: number; gastos: number; ahorros: number };
 export function calcularMargen(f: Finanzas) {

@@ -63,3 +63,27 @@ describe("texto de intereses", () => {
     }
   });
 });
+
+import { frasePresentacion, ENERGIA_JORNADA, EJEMPLOS_TAREAS } from "@/lib/rumbo-data";
+import { leerGuardado, VENCE_MS } from "@/lib/rumbo-store";
+
+describe("ajustes de la prueba en celular", () => {
+  it("energía de jornada: Mucha, Media, Casi nada", () => {
+    expect(ENERGIA_JORNADA).toEqual(["Mucha", "Media", "Casi nada"]);
+  });
+  it("solo 2 ejemplos de tareas", () => {
+    expect(EJEMPLOS_TAREAS).toEqual(["Calmo a clientes molestos", "Atiendo en inglés"]);
+  });
+  it("frase sin favoritas usa las primeras habilidades", () => {
+    expect(frasePresentacion(["Manejo de conflictos", "Multitarea", "Inglés", "Otra"], [])).toBe("Soy una persona que sabe manejo de conflictos, multitarea e inglés.");
+  });
+  it("frase con 1 favorita usa solo esa", () => {
+    expect(frasePresentacion(["A", "Liderazgo"], [1])).toBe("Soy una persona que sabe liderazgo.");
+  });
+  it("el avance guardado vence a las 24 horas", () => {
+    const raw = JSON.stringify({ t: 0, s: { pantalla: "valores" } });
+    expect(leerGuardado(raw, VENCE_MS - 1)).toEqual({ pantalla: "valores" });
+    expect(leerGuardado(raw, VENCE_MS + 1)).toBeNull();
+    expect(leerGuardado("{roto", 0)).toBeNull();
+  });
+});

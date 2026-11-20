@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Check, Download, Loader2, MessageCircle, RotateCcw, Star, Globe } from "lucide-react";
+import { ArrowLeft, Check, Download, Loader2, MessageCircle, RotateCcw, Star, Globe, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -41,7 +41,7 @@ export function derivados(s: Estado) {
 }
 
 export function Flow({ empresa }: { empresa: string | null }) {
-  const { s, set, listo } = useRumbo();
+  const { s, set, listo, reset } = useRumbo();
   const lista = useMemo(() => pantallas(s), [s]);
   const id = (lista.includes(s.pantalla as Id) ? s.pantalla : "bienvenida") as Id;
   const idx = lista.indexOf(id);
@@ -67,8 +67,13 @@ export function Flow({ empresa }: { empresa: string | null }) {
           ) : <span className="text-sm font-extrabold tracking-wide">RUMBO <span className="text-primary">Exprés</span></span>}
           {paso >= 1 && paso <= 6 && <span className="text-xs font-bold text-muted-foreground">Paso {paso} de 6</span>}
         </div>
+        {idx > 0 && (
+          <div className="mt-1 text-right">
+            <button type="button" onClick={() => { reset(); window.scrollTo({ top: 0 }); }} className="text-xs text-muted-foreground underline underline-offset-4">Empezar de nuevo</button>
+          </div>
+        )}
         {paso >= 1 && (
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-field" role="progressbar" aria-valuemin={0} aria-valuemax={6} aria-valuenow={Math.min(paso, 6)}>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-field" role="progressbar" aria-valuemin={0} aria-valuemax={6} aria-valuenow={Math.min(paso, 6)}>
             <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${(Math.min(paso, 6) / 6) * 100}%` }} />
           </div>
         )}
@@ -125,9 +130,10 @@ function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Part
         <>
           <p className="mb-4 inline-block rounded-full bg-field px-3 py-1 text-xs font-bold">RUMBO Exprés · unos 25 minutos</p>
           <h1 className="text-[1.7rem] font-extrabold leading-tight">Las habilidades que usas en tu trabajo de call center son muy valiosas en muchas industrias.</h1>
-          <p className="mt-4 text-lg">En unos 25 minutos vas a ver lo que sí sabes hacer y vas a salir con una ruta de 30 días. No necesitas cuenta. No guardamos tu nombre.</p>
+          <p className="mt-4 text-lg">En unos 25 minutos vas a ver lo que sí sabes hacer y vas a salir con tu ruta de próximos pasos. No necesitas cuenta. No guardamos tu nombre.</p>
+          <p className="mt-3 font-bold">Es gratis y es tuya. No te pediremos datos de pago.</p>
           <div className="mt-6 rounded-2xl border-l-4 border-primary bg-field p-4 text-sm text-muted-foreground">
-            Tus resultados se basan en el Programa RUMBO, creado por una psicóloga clínica. Usamos inteligencia artificial solo para redactarlos. No guardamos tu nombre ni tus respuestas. Esta herramienta no reemplaza un proceso terapéutico.
+            Tus resultados se basan en el Programa RUMBO, creado por una psicóloga clínica. Usamos inteligencia artificial solo para redactarlos. Tu avance se guarda solo en este dispositivo por 24 horas y no se envía a nadie. Esta herramienta no reemplaza un proceso terapéutico.
           </div>
           <Continuar onClick={() => siguiente()}>Empezar</Continuar>
         </>
@@ -170,7 +176,7 @@ function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Part
       return (
         <>
           <div className="rounded-3xl bg-field p-6">
-            <p className="text-xl font-bold leading-snug">Lo que sientes es muy común en este trabajo y tiene sentido. No es falta de voluntad: es cansancio acumulado. Tu ruta va a empezar por ahí.</p>
+            <p className="text-xl font-bold leading-snug">Lo que sientes es muy común en este trabajo y tiene sentido. No es falta de voluntad: es cansancio acumulado. Por eso, tu ruta empieza por recuperar energía.</p>
           </div>
           <Continuar onClick={() => siguiente()} />
         </>
@@ -212,9 +218,11 @@ function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Part
     case "perfil":
       return (
         <>
-          <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Tu punto de partida</p>
-          <h1 className="mt-1 text-3xl font-extrabold">{D.PERFIL_NOMBRE[d.perfil]}</h1>
-          <p className="mt-4 rounded-2xl bg-field p-5 text-lg">{D.perfilTexto(d.perfil, d.economico)}</p>
+          <section className="rounded-3xl border-2 border-primary bg-field p-6 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tu resultado</p>
+            <h1 className="mt-2 text-4xl font-black leading-tight text-foreground">{D.PERFIL_NOMBRE[d.perfil]}</h1>
+            <p className="mt-4 text-lg leading-relaxed">{D.perfilTexto(d.perfil, d.economico)}</p>
+          </section>
           <Continuar onClick={() => siguiente()} />
         </>
       );
@@ -235,7 +243,6 @@ function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Part
           <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Tus intereses</p>
           <h1 className="mt-1 text-3xl font-extrabold">{d.t1} + {d.t2}</h1>
           <p className="mt-4 rounded-2xl bg-field p-5 text-lg">{d.interes}</p>
-          <p className="mt-3 text-xs text-muted-foreground">Inspirado en el modelo de Holland; no es un test validado.</p>
           <Continuar onClick={() => siguiente()} />
         </>
       );
@@ -250,7 +257,7 @@ function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Part
     case "condiciones":
       return (
         <>
-          <Titulo>¿Qué condición de trabajo te haría más falta? Elige hasta 2.</Titulo>
+          <Titulo>¿Qué condiciones de trabajo prefieres? Elige hasta 2.</Titulo>
           <div className="space-y-2.5">{D.CONDICIONES.map((v, i) => <Opcion multi key={v} on={s.condiciones.includes(i)} onClick={() => set({ condiciones: toggle(s.condiciones, i, 2) })}>{v}</Opcion>)}</div>
           <Continuar disabled={s.condiciones.length === 0} onClick={() => siguiente()} />
         </>
@@ -293,7 +300,8 @@ function Tareas({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
   };
   return (
     <>
-      <Titulo sub="Escribe de 3 a 5 cosas que haces o hacías en tu trabajo, con tus palabras. No hay respuestas correctas.">Tus habilidades, traducidas</Titulo>
+      <Titulo sub="Escribe con tus propias palabras de 3 a 5 cosas que haces o hacías en tu turno. Incluye también tareas extra o especiales: si capacitas, reportas o resuelves casos difíciles. No hay respuestas correctas.">Tus habilidades, traducidas</Titulo>
+      <p className="mb-2 text-sm text-muted-foreground">Por ejemplo:</p>
       <div className="mb-4 flex flex-wrap gap-2">
         {D.EJEMPLOS_TAREAS.map((ej) => (
           <button key={ej} type="button" onClick={() => usarEjemplo(ej)} className="rounded-full border-2 border-primary/60 px-3 py-1.5 text-sm font-semibold hover:bg-field">+ {ej}</button>
@@ -317,17 +325,18 @@ function Tareas({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
 function Habilidades({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
   const { s, set } = useRumbo();
   const hs = s.habilidades ?? [];
-  const sugerida = () => {
-    const n = s.favoritas.map((i) => hs[i]?.habilidad.split("(")[0]?.trim().toLowerCase() ?? "");
-    return n.length === 3 ? `Soy una persona que sabe ${n[0]}, ${n[1]} y ${n[2]}.` : "";
+  const [copiado, setCopiado] = useState(false);
+  const sugerida = () => D.frasePresentacion(hs.map((h) => h.habilidad), s.favoritas);
+  const copiar = async () => {
+    try { await navigator.clipboard.writeText(s.frase); setCopiado(true); setTimeout(() => setCopiado(false), 2000); } catch { /* sin portapapeles */ }
   };
   useEffect(() => {
-    if (s.favoritas.length === 3 && !s.frase) set({ frase: sugerida() });
+    if (!s.frase) set({ frase: sugerida() });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.favoritas]);
   return (
     <>
-      <Titulo sub="Marca con estrella tus 3 favoritas: las que más disfrutas usar, aunque no sean las que mejor dominas.">Así se llaman tus habilidades en el mercado</Titulo>
+      <Titulo sub="Si quieres, marca con estrella hasta 3 que más disfrutes usar.">Así se llaman tus habilidades en el mercado</Titulo>
       <div className="space-y-4">
         {hs.map((h, i) => {
           const on = s.favoritas.includes(i);
@@ -350,13 +359,15 @@ function Habilidades({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }
           );
         })}
       </div>
-      {s.favoritas.length === 3 && (
-        <label className="mt-6 block">
-          <span className="mb-2 block font-bold">Tu frase (puedes editarla)</span>
-          <textarea className="field min-h-24" value={s.frase} onChange={(e) => set({ frase: e.target.value })} />
-        </label>
-      )}
-      <Continuar disabled={s.favoritas.length !== 3 || !s.frase.trim()} onClick={() => siguiente()} />
+      <section className="mt-8 rounded-3xl border-2 border-primary bg-field p-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tu frase para presentarte</p>
+          <Button variant="soft" size="sm" onClick={copiar} disabled={!s.frase.trim()}>{copiado ? <><Check /> Copiada</> : <><Copy /> Copiar</>}</Button>
+        </div>
+        <textarea aria-label="Tu frase para presentarte (puedes editarla)" className="mt-3 min-h-24 w-full resize-none bg-transparent text-xl font-bold leading-snug outline-none" value={s.frase} onChange={(e) => set({ frase: e.target.value })} />
+        <p className="text-xs text-muted-foreground">Puedes editarla.</p>
+      </section>
+      <Continuar disabled={!s.frase.trim()} onClick={() => siguiente()} />
     </>
   );
 }
@@ -432,7 +443,7 @@ function Ruta({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
         ) : (
           <>
             <Loader2 className="mx-auto size-10 animate-spin text-primary" />
-            <p className="mt-5 text-lg font-bold">Estamos armando tu ruta de 30 días…</p>
+            <p className="mt-5 text-lg font-bold">Estamos armando tu ruta de próximos pasos…</p>
             <p className="mt-1 text-muted-foreground">Toma unos segundos.</p>
           </>
         )}
@@ -440,7 +451,7 @@ function Ruta({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
     );
   return (
     <>
-      <Titulo sub="Pasos cortos, de 30 minutos o menos. Avanza a tu ritmo.">Tu ruta de 30 días</Titulo>
+      <Titulo sub="Pasos pequeños para el próximo mes, a tu ritmo.">Tu ruta de próximos pasos</Titulo>
       <RutaVista ruta={s.ruta} fecha={s.rutaFecha ?? D.fechaRevision()} />
       <Continuar onClick={() => siguiente()}>Ver mi resumen</Continuar>
     </>
@@ -495,6 +506,7 @@ function Cierre({ empresa, onReset }: { empresa: string | null; onReset: () => v
     setPdf(true);
     try {
       await descargarPDF({
+        energiaBaja: d.energia === "baja",
         perfilNombre: D.PERFIL_NOMBRE[d.perfil], perfilTexto: D.perfilTexto(d.perfil, d.economico), frase: s.frase,
         interes: d.interes, valores: s.valores.map((i) => D.VALORES[i]!), condiciones: s.condiciones.map((i) => D.CONDICIONES[i]!),
         habilidades: s.habilidades ?? [], favoritas: s.favoritas, margen: s.finanzas ? D.margenTexto(s.finanzas) : null,
@@ -520,9 +532,19 @@ function Cierre({ empresa, onReset }: { empresa: string | null; onReset: () => v
         </Bloque>
         {s.finanzas && <Bloque t="Tu margen">{D.margenTexto(s.finanzas)}</Bloque>}
       </div>
-      {s.ruta && <div className="mt-6"><h2 className="mb-3 text-xl font-extrabold">Tu ruta de 30 días</h2><RutaVista ruta={s.ruta} fecha={fecha} /></div>}
+      {s.ruta && <div className="mt-6"><h2 className="mb-3 text-xl font-extrabold">Tu ruta de próximos pasos</h2><RutaVista ruta={s.ruta} fecha={fecha} /></div>}
 
-      <div className="mt-8"><Button variant="hero" size="xl" onClick={bajar} disabled={pdf}>{pdf ? <Loader2 className="animate-spin" /> : <Download />} Descargar mi plan (PDF)</Button></div>
+      <section className="mt-8 rounded-3xl border-2 border-primary bg-field p-6">
+        <h2 className="text-xl font-extrabold leading-snug">Si quieres recorrer esta ruta acompañado/a</h2>
+        <p className="mt-3 leading-relaxed">Este es un primer paso. En el Programa RUMBO trabajas tu ruta con la Licda. Angie Mendoza, psicóloga y orientadora vocacional, en 4 sesiones en línea.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Programa completo: Q1,000.</p>
+        <div className="mt-5 grid gap-2">
+          <Button variant="hero" size="xl" asChild><a href={D.WHATSAPP} target="_blank" rel="noreferrer"><MessageCircle /> Escribir por WhatsApp</a></Button>
+          <a href={D.WEB} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 py-2 text-sm font-bold underline decoration-primary decoration-2 underline-offset-4"><Globe className="size-4" /> Conocer el Programa RUMBO</a>
+        </div>
+      </section>
+
+      <div className="mt-6"><Button variant="soft" size="xl" onClick={bajar} disabled={pdf}>{pdf ? <Loader2 className="animate-spin" /> : <Download />} Descargar mi ruta (PDF)</Button></div>
 
       <div className="mt-8 rounded-2xl bg-field p-5 text-center">
         <p className="font-extrabold">¿Te fue útil?</p>
@@ -536,14 +558,6 @@ function Cierre({ empresa, onReset }: { empresa: string | null; onReset: () => v
         {s.calificacion !== null && <p className="mt-2 text-sm text-muted-foreground">Gracias por contarnos.</p>}
       </div>
 
-      <div className="mt-6 rounded-2xl border-2 border-primary p-5">
-        <p className="font-extrabold">Programa RUMBO, dirigido por la psicóloga Angie Mendoza</p>
-        <p className="mt-1 text-muted-foreground">Si quieres acompañamiento para avanzar, son 4 sesiones contigo y para ti.</p>
-        <div className="mt-4 grid gap-2">
-          <Button variant="hero" size="xl" asChild><a href={D.WHATSAPP} target="_blank" rel="noreferrer"><MessageCircle /> Escribir por WhatsApp</a></Button>
-          <Button variant="soft" size="xl" asChild><a href={D.WEB} target="_blank" rel="noreferrer"><Globe /> Visitar página web</a></Button>
-        </div>
-      </div>
       <Button variant="quiet" className="mt-6 w-full" onClick={onReset}><RotateCcw /> Empezar de nuevo</Button>
     </>
   );

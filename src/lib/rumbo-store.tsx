@@ -35,6 +35,17 @@ export const estadoInicial = (): Estado => ({
 });
 
 const KEY = "rumbo-expres";
+/** El avance vence a las 24 horas. */
+export const VENCE_MS = 24 * 60 * 60 * 1000;
+
+export function leerGuardado(raw: string | null, ahora = Date.now()): Partial<Estado> | null {
+  if (!raw) return null;
+  try {
+    const g = JSON.parse(raw) as { t?: number; s?: Partial<Estado> };
+    if (typeof g.t !== "number" || !g.s || ahora - g.t > VENCE_MS) return null;
+    return g.s;
+  } catch { return null; }
+}
 type Ctx = { s: Estado; set: (p: Partial<Estado>) => void; reset: () => void; listo: boolean };
 const C = createContext<Ctx | null>(null);
 
@@ -43,13 +54,18 @@ export function RumboProvider({ children }: { children: ReactNode }) {
   const [listo, setListo] = useState(false);
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(KEY);
-      if (raw) setS({ ...estadoInicial(), ...JSON.parse(raw) });
-    } catch { /* ignorar */ }
+      const g = leerGuardado(localStorage.getItem(KEY));
+      if (g) setS({ ...estadoInicial(), ...g });
+      else localStorage.removeItem(KEY);
+    } catch { /* almacenamiento no disponible */ }
     setListo(true);
   }, []);
   useEffect(() => {
-    if (listo) sessionStorage.setItem(KEY, JSON.stringify(s));
+    if (!listo) return;
+    try {
+      if (s.pantalla === "bienvenida") localStorage.removeItem(KEY);
+      else localStorage.setItem(KEY, JSON.stringify({ t: Date.now(), s }));
+    } catch { /* almacenamiento no disponible */ }
   }, [s, listo]);
   return (
     <C.Provider value={{ s, listo, set: (p) => setS((prev) => ({ ...prev, ...p })), reset: () => setS(estadoInicial()) }}>
