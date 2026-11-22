@@ -34,3 +34,4 @@ use the editor.
 - AI calls go through server functions in src/lib/rumbo-ai.functions.ts using strict json_schema output; scoring rules (energy, profile, interests, margin) are pure functions in src/lib/rumbo-data.ts covered by src/test/rumbo-rules.test.ts.
 - Share validated AI output contracts through `rumbo-output.ts` across server functions, browser state and PDF; accompaniment focus is selected by a pure app rule, never AI.
 - Normalize route durations instead of rejecting otherwise valid outputs, and use the shared company-aware program label in both app and PDF to keep price visibility consistent.
+- Pass company-link context and the applicable growth answer through the shared route-input builder to keep AI guidance neutral without persisting additional personal data.

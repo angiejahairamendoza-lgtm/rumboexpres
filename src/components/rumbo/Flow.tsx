@@ -302,7 +302,7 @@ function Pantalla({ id, siguiente, empresa, onReset, onWhatsApp }: { id: Id; sig
           <Continuar onClick={() => siguiente()} />
         </>
       );
-    case "ruta": return <Ruta siguiente={siguiente} />;
+    case "ruta": return <Ruta siguiente={siguiente} empresa={empresa} />;
     case "cierre": return <Cierre empresa={empresa} onReset={onReset} onWhatsApp={onWhatsApp} />;
   }
 }
@@ -430,22 +430,24 @@ function FinanzasPaso({ siguiente }: { siguiente: (p?: Partial<Estado>) => void 
   );
 }
 
-function contextoRuta(s: Estado) {
+export function contextoRuta(s: Estado, empresa: string | null) {
   const d = derivados(s);
   const m = s.finanzas ? { ...s.finanzas, ...D.calcularMargen(s.finanzas) } : null;
   return {
+    enlaceEmpresa: empresa !== null,
+    crecerEmpresa: D.respuestaCrecerEmpresa(s.situacion, s.crecerEmpresa) ?? "",
     perfil: d.perfil, perfilNombre: D.PERFIL_NOMBRE[d.perfil], economico: d.economico,
     situacion: D.SITUACIONES[s.situacion ?? 0] ?? "", edad: D.EDADES[s.edad ?? 0] ?? "",
     necesidad: D.NECESIDADES[s.necesidad ?? 3]?.label ?? "", proyecto: s.proyecto.trim(),
     energia: d.energia, energiaJornada: D.ENERGIA_JORNADA[s.jornada ?? 1] ?? "", claridad: s.claridad,
     intereses: [d.t1, d.t2], interesTexto: d.interes,
-    valores: s.valores.map((i) => D.VALORES[i]!), condiciones: s.condiciones.map((i) => D.CONDICIONES[i]!),
+    valores: s.valores.flatMap((i) => D.VALORES[i] ? [D.VALORES[i]] : []), condiciones: s.condiciones.flatMap((i) => D.CONDICIONES[i] ? [D.CONDICIONES[i]] : []),
     favoritas: (s.favoritas.length ? s.favoritas : (s.habilidades ?? []).slice(0, 3).map((_, i) => i)).map((i) => s.habilidades?.[i]?.habilidad ?? "").filter(Boolean), frase: s.frase,
     margen: m,
   };
 }
 
-function Ruta({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
+function Ruta({ siguiente, empresa }: { siguiente: (p?: Partial<Estado>) => void; empresa: string | null }) {
   const { s, set } = useRumbo();
   const generar = useServerFn(generarRuta);
   const [error, setError] = useState<string | null>(null);
@@ -453,7 +455,7 @@ function Ruta({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
   const pedir = async () => {
     setCargando(true); setError(null);
     try {
-      const r = await generar({ data: contextoRuta(s) });
+      const r = await generar({ data: contextoRuta(s, empresa) });
       set({ ruta: r, rutaFecha: D.fechaRevision() });
     } catch (e) { setError(e instanceof Error ? e.message : "Intenta de nuevo."); }
     finally { setCargando(false); }

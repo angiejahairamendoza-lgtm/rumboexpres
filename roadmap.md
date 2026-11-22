@@ -1,4 +1,6 @@
 # Ajustes solicitados
+- [x] Orientación neutral, contexto de empresa y reparto de puestos internos/externos.
+- [x] Pruebas y dos rutas reales por enlace de empresa; mostrar resultados y borrar estado de prueba.
 - [x] Íconos, imagen Nunito y metadatos para compartir.
 - [x] Normalizar tiempos y evitar habilidades repetidas.
 - [x] Nuevas reglas de ruta y preguntas breves.

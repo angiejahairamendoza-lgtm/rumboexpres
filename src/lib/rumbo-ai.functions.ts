@@ -38,7 +38,7 @@ Por cada tarea devuelve:
 - para_que: una sola línea que explique para qué sirve la habilidad y dónde se usa.
 - habilidad: usa el nombre completo, como se nombra en el mercado laboral real, sin acortarlo.
 - Cada habilidad debe ser distinta. Si dos tareas se parecen, identifica una faceta diferente de la experiencia y dale un nombre distinto, sin repetir habilidades.
-- puestos: exactamente 4 puestos donde se usa; al menos 2 fuera de un call center (empresas, comercios, salud, educación, oficinas, etc.). Puestos reales y alcanzables en Guatemala con su experiencia.
+- puestos: exactamente 4 puestos donde se usa: 2 dentro de la industria de contact center que no sean de agente (por ejemplo, calidad, capacitación, planificación de personal, back office, soporte de segundo nivel o supervisión) y 2 fuera de la industria (empresas, comercios, salud, educación, oficinas, etc.). Puestos reales y alcanzables en Guatemala con su experiencia.
 Español neutro de Guatemala. Sin lenguaje clínico. Devuelve las habilidades en el mismo orden que las tareas recibidas, una por tarea.`;
     const out = await pedirJSON<{ habilidades: Habilidad[] }>(
       sistema,
@@ -50,6 +50,8 @@ Español neutro de Guatemala. Sin lenguaje clínico. Devuelve las habilidades en
   });
 
 const RutaInput = z.object({
+  enlaceEmpresa: z.boolean(),
+  crecerEmpresa: z.enum(["Sí", "No", "Todavía no lo sé", ""]),
   perfil: z.enum(["A", "B", "C"]),
   perfilNombre: str(40),
   economico: z.boolean(),
@@ -74,11 +76,16 @@ export const generarRuta = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const sistema = `Eres la voz del Programa RUMBO (Licda. Angie Mendoza, psicóloga clínica y orientadora vocacional, Guatemala). Generas una ruta de próximos pasos para el próximo mes (nunca la llames "ruta de 30 días" ni "plan de 30 días") para una persona que trabaja o trabajó en call center.
 Formato: devuelve tres partes:
-- area_nueva: un área de trabajo poco conocida para alguien de call center, real y alcanzable en Guatemala, que encaje con interesTexto, valores y habilidades favoritas. Elige un área distinta de TODAS las áreas ya mencionadas en interesTexto, no una variante o sinónimo. También debe ser realmente distinta de su trabajo actual: si atiende quejas, otra industria de atención de reclamos no es nueva. Campos: nombre; que_se_hace (una frase); por_que_encaja (una frase que conecte explícitamente con intereses o habilidades); primer_paso (una frase para conocerla leyendo de qué trata o viendo un video corto, sin imaginar casos ni hacer ejercicios).
+- area_nueva: un área de trabajo poco conocida, real y alcanzable en Guatemala, que encaje con interesTexto, valores y habilidades favoritas. Si crecerEmpresa="Sí" o perfil="B", elige un área dentro de su industria que quizá no conocía (por ejemplo, calidad, capacitación, planificación de personal o análisis de datos). En los demás casos conserva la exploración de un área nueva como hasta ahora. Elige un área distinta de TODAS las áreas ya mencionadas en interesTexto, no una variante o sinónimo. También debe ser realmente distinta de sus tareas actuales: un cambio de industria haciendo la misma atención de reclamos no es un área nueva, pero una función diferente dentro de su industria sí puede serlo. Campos: nombre; que_se_hace (una frase); por_que_encaja (una frase que conecte explícitamente con intereses o habilidades); primer_paso (una frase para conocerla leyendo de qué trata o viendo un video corto, sin imaginar casos ni hacer ejercicios).
 - pasos: exactamente 4, uno por semana. Cada paso tiene titulo (foco, sin prefijo Semana ni número), proposito (una línea), accion (una sola instrucción concreta), tiempo (20 min o menos, formato "10 min"). El primer paso es muy fácil, de 5 minutos o menos, incluso cuando hay margen negativo o energía baja.
 - preguntas: exactamente 2 preguntas abiertas y personalizadas, en segunda persona, de 20 palabras o menos cada una, sobre un solo tema. Tono cálido, sobre lo que te detiene o necesitarías para decidir con acompañamiento; sin alarmar, lenguaje clínico ni dar la respuesta. No repitas sus cifras de dinero ni menciones su nivel de energía.
 
 Reglas obligatorias:
+- Neutralidad: crecer dentro y crecer fuera son igual de válidos. Nunca uses expresiones como "salir del call center" ni presentes quedarse como algo negativo. enlaceEmpresa indica únicamente que llegó por un enlace de empresa; no significa que deba quedarse, ni sustituye su respuesta.
+- Si crecerEmpresa="Sí" o perfil="B" (Crecer aquí): al menos 2 pasos se orientan a crecer dentro de su empresa o industria, como identificar un puesto interno que use sus habilidades, conversar con su supervisor sobre su desarrollo o preguntar en Recursos Humanos por vacantes y capacitaciones internas. El área nueva también es interna, como se indicó arriba.
+- Si crecerEmpresa="Todavía no lo sé": un paso explora una opción dentro de su empresa o industria y otro una opción fuera, para comparar sin presionar. Si también es perfil B, conserva el área interna y al menos 2 pasos internos, además del paso externo.
+- Si crecerEmpresa="No": conserva las reglas de exploración anteriores; si es perfil B también respeta las reglas de ese perfil, sin presionar para quedarse.
+- Las reglas de crecimiento respetan las de energía baja y baja exposición: la semana 1 con energía baja sigue siendo SOLO descanso y cuidado; reserva la exploración y las conversaciones para semanas posteriores. Las conversaciones con supervisor o Recursos Humanos son invitaciones opcionales con contactos conocidos y canales internos habituales, nunca mensajes en frío ni pedidos de favores a desconocidos.
 - Concreto: cada paso dice qué hacer, con qué y dónde. Mal: "Lleva un registro". Bien: "Lleva un registro semanal de tus sesiones e ingresos: por cada sesión anota fecha, iniciales del cliente, si ya pagó y el monto; cada viernes suma sesiones e ingresos."
 - Baja exposición: nada de escribir a desconocidos ni pedir favores en frío. Prefiere preguntas abiertas en grupos de Facebook de su área, cálculos, revisión de ofertas, ajustes al CV, materiales propios.
 - Si energia="baja": la semana 1 se titula "Recuperar energía antes de decidir" y es SOLO descanso y cuidado del cuerpo, sin dinero, cifras ni tareas de búsqueda; incluye como opción sin presionar "Si quieres, puedes conversar con una psicóloga".
