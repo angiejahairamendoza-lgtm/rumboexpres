@@ -360,6 +360,7 @@ function Tareas({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
       <Continuar disabled={llenas.length < 3 || cargando} onClick={enviar}>
         {cargando ? <><Loader2 className="animate-spin" /> Traduciendo…</> : "Traducir mis habilidades"}
       </Continuar>
+      {cargando && <p className="mt-2 text-center text-sm text-muted-foreground" aria-live="polite">Esto toma unos segundos.</p>}
     </>
   );
 }
@@ -462,20 +463,38 @@ export function contextoRuta(s: Estado, empresa: string | null) {
   };
 }
 
+const MENSAJES_RUTA = [
+  "Revisando tus intereses y valores…",
+  "Buscando un área que quizá no conocías…",
+  "Ajustando los pasos a tu energía y tu tiempo…",
+  "Preparando los detalles de cada paso…",
+  "Preparando preguntas para tu acompañamiento…",
+];
+
 function Ruta({ siguiente, empresa }: { siguiente: (p?: Partial<Estado>) => void; empresa: string | null }) {
   const { s, set } = useRumbo();
   const generar = useServerFn(generarRuta);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [progreso, setProgreso] = useState(0);
+  const [mensaje, setMensaje] = useState(0);
   const pedir = async () => {
-    setCargando(true); setError(null);
+    setCargando(true); setError(null); setProgreso(0); setMensaje(0);
     try {
       const r = await generar({ data: contextoRuta(s, empresa) });
+      setProgreso(100);
       set({ ruta: r, rutaFecha: D.fechaRevision() });
     } catch (e) { setError(e instanceof Error ? e.message : "Intenta de nuevo."); }
     finally { setCargando(false); }
   };
   useEffect(() => { if (!s.ruta && !cargando) void pedir(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  useEffect(() => {
+    if (!cargando) return;
+    // Avanza poco a poco hasta cerca del 90 % en unos 70 segundos.
+    const barra = setInterval(() => setProgreso((p) => Math.min(90, p + 90 / 140)), 500);
+    const textos = setInterval(() => setMensaje((m) => (m + 1) % MENSAJES_RUTA.length), 6000);
+    return () => { clearInterval(barra); clearInterval(textos); };
+  }, [cargando]);
 
   if (!s.ruta)
     return (
@@ -487,9 +506,12 @@ function Ruta({ siguiente, empresa }: { siguiente: (p?: Partial<Estado>) => void
           </>
         ) : (
           <>
-            <Loader2 className="mx-auto size-10 animate-spin text-primary" />
-            <p className="mt-5 text-lg font-bold">Estamos armando tu ruta de próximos pasos…</p>
-            <p className="mt-1 text-muted-foreground">Toma unos segundos.</p>
+            <p className="text-lg font-bold">Estamos armando tu ruta de próximos pasos…</p>
+            <p className="mt-1 text-muted-foreground">Esto toma alrededor de un minuto.</p>
+            <div className="mx-auto mt-6 h-3 w-full max-w-xs overflow-hidden rounded-full bg-field" role="progressbar" aria-valuenow={Math.round(progreso)} aria-valuemin={0} aria-valuemax={100} aria-label="Avance de la preparación de tu ruta">
+              <div className="h-full rounded-full bg-primary transition-[width] duration-500 ease-linear" style={{ width: `${progreso}%` }} />
+            </div>
+            <p className="mt-4 text-sm text-muted-foreground" aria-live="polite">{MENSAJES_RUTA[mensaje]}</p>
           </>
         )}
       </div>
