@@ -1,4 +1,9 @@
 # Ajustes solicitados
+- [x] Íconos, imagen Nunito y metadatos para compartir.
+- [x] Normalizar tiempos y evitar habilidades repetidas.
+- [x] Nuevas reglas de ruta y preguntas breves.
+- [x] Una invitación con precio según enlace, app y PDF.
+- [x] Pruebas, dos rutas reales y limpieza de datos de prueba (solo estado local; sin inserciones de prueba).
 - [x] Habilidades con para_que y cuatro puestos, sin frase de CV.
 - [x] Área nueva, cuatro pasos y dos preguntas en la salida y pantalla.
 - [x] Acompañamiento con foco elegido por la app y claridad.

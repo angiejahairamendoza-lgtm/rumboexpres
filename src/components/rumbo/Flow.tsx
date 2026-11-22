@@ -50,7 +50,7 @@ export function Flow({ empresa }: { empresa: string | null }) {
   const onWhatsApp = () => { void registrarClicWhatsApp(empresa, derivados(s).perfil); };
   const descargarAntes = async () => {
     setDescargando(true);
-    try { await descargarResumen(s); setConfirmarReset(false); }
+    try { await descargarResumen(s, empresa); setConfirmarReset(false); }
     finally { setDescargando(false); }
   };
   const lista = useMemo(() => pantallas(s), [s]);
@@ -512,10 +512,10 @@ function RutaVista({ ruta, fecha }: { ruta: NonNullable<Estado["ruta"]>; fecha: 
   );
 }
 
-async function descargarResumen(s: Estado) {
+async function descargarResumen(s: Estado, empresa: string | null) {
   const d = derivados(s);
   await descargarPDF({
-    energiaBaja: d.energia === "baja",
+    energiaBaja: d.energia === "baja", empresa,
     perfilNombre: D.PERFIL_NOMBRE[d.perfil], perfilTexto: D.perfilTexto(d.perfil, d.economico), frase: s.frase,
     interes: d.interes, valores: s.valores.flatMap((i) => D.VALORES[i] ? [D.VALORES[i]] : []), condiciones: s.condiciones.flatMap((i) => D.CONDICIONES[i] ? [D.CONDICIONES[i]] : []),
     habilidades: s.habilidades ?? [], favoritas: s.favoritas, margen: s.finanzas ? D.margenTexto(s.finanzas) : null,
@@ -544,7 +544,7 @@ function Cierre({ empresa, onReset, onWhatsApp }: { empresa: string | null; onRe
   const bajar = async () => {
     setPdf(true);
     try {
-      await descargarResumen(s);
+      await descargarResumen(s, empresa);
     } finally { setPdf(false); }
   };
 
@@ -567,16 +567,6 @@ function Cierre({ empresa, onReset, onWhatsApp }: { empresa: string | null; onRe
       </div>
       {s.ruta && <div className="mt-6"><h2 className="mb-3 text-xl font-extrabold">Tu ruta de próximos pasos</h2><RutaVista ruta={s.ruta} fecha={fecha} /></div>}
 
-      <section className="mt-8 rounded-3xl border-2 border-primary bg-field p-6">
-        <h2 className="text-xl font-extrabold leading-snug">Si quieres recorrer esta ruta acompañado/a</h2>
-        <p className="mt-3 leading-relaxed">Este es un primer paso. En el Programa RUMBO trabajas tu ruta con la Licda. Angie Mendoza, psicóloga y orientadora vocacional, en 4 sesiones en línea.</p>
-        <p className="mt-2 text-sm text-muted-foreground">Programa completo: Q1,000.</p>
-        <div className="mt-5 grid gap-2">
-          <Button variant="hero" size="xl" asChild><a href={D.WHATSAPP} onClick={onWhatsApp} target="_blank" rel="noreferrer"><MessageCircle /> Escribir por WhatsApp</a></Button>
-          <a href={D.WEB} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 py-2 text-sm font-bold underline decoration-primary decoration-2 underline-offset-4"><Globe className="size-4" /> Conocer el Programa RUMBO</a>
-        </div>
-      </section>
-
       <div className="mt-6"><Button variant="soft" size="xl" onClick={bajar} disabled={pdf}>{pdf ? <Loader2 className="animate-spin" /> : <Download />} Descargar mi ruta (PDF)</Button></div>
 
       <section className="mt-8 rounded-3xl border-2 border-primary bg-field p-6">
@@ -584,7 +574,9 @@ function Cierre({ empresa, onReset, onWhatsApp }: { empresa: string | null; onRe
         <p className="mt-3 leading-relaxed">{D.focoAcompanamiento(d.energia, d.perfil)}</p>
         <ul className="mt-4 list-disc space-y-3 pl-5">{s.ruta?.preguntas.map((pregunta, i) => <li key={i}>{pregunta}</li>)}</ul>
         <p className="mt-4 leading-relaxed">Hoy marcaste tu claridad en {s.claridad} de 10. En el Programa RUMBO trabajamos juntos para que tengas más claridad sobre tus metas y decisiones.</p>
+        <p className="mt-3 text-sm text-muted-foreground">{D.programaPrecio(empresa)}</p>
         <Button variant="hero" size="xl" className="mt-5" asChild><a href={D.WHATSAPP} onClick={onWhatsApp} target="_blank" rel="noreferrer"><MessageCircle /> Escribir por WhatsApp</a></Button>
+        <a href={D.WEB} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center justify-center gap-2 py-2 text-sm font-bold underline decoration-primary decoration-2 underline-offset-4"><Globe className="size-4" /> Conocer el Programa RUMBO</a>
       </section>
 
       <div className="mt-8 rounded-2xl bg-field p-5 text-center">

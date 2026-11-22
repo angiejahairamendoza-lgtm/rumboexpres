@@ -1,8 +1,8 @@
 import type { Habilidad, RutaResultado } from "./rumbo-output";
-import { tituloSemana, WHATSAPP, WEB, FUENTES } from "./rumbo-data";
+import { tituloSemana, WHATSAPP, WEB, FUENTES, programaPrecio } from "./rumbo-data";
 
 export type DatosPDF = {
-  energiaBaja: boolean;
+  energiaBaja: boolean; empresa: string | null;
   perfilNombre: string; perfilTexto: string; frase: string; interes: string; valores: string[];
   condiciones: string[]; habilidades: Habilidad[]; favoritas: number[]; margen: string | null;
   ruta: RutaResultado | null; fechaRevision: string; foco: string; claridad: number;
@@ -146,27 +146,18 @@ export async function descargarPDF(d: DatosPDF) {
   seccion("Fecha de revisión", 10);
   parrafo(`Vuelve a mirar tu ruta el ${d.fechaRevision}.`, { bold: true, color: NAVY });
 
-  seccion("Si quieres recorrer esta ruta acompañado/a", 30);
-  parrafo("Este es un primer paso. En el Programa RUMBO trabajas tu ruta con la Licda. Angie Mendoza, psicóloga y orientadora vocacional, en 4 sesiones en línea.");
+  seccion("Lo que puedes trabajar con acompañamiento", 30);
+  parrafo(d.foco);
+  d.ruta?.preguntas.forEach((pregunta) => parrafo(`• ${pregunta}`));
+  parrafo(`Hoy marcaste tu claridad en ${d.claridad} de 10. En el Programa RUMBO trabajamos juntos para que tengas más claridad sobre tus metas y decisiones.`);
+  parrafo(programaPrecio(d.empresa), { size: 9, color: GRIS });
   asegurar(lh(11));
   doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(...NAVY);
   const wa = "WhatsApp +502 5437-2899", sep = "  ·  ", web = "angiemendoza.lovable.app";
   doc.textWithLink(wa, M, y, { url: WHATSAPP });
   const xw = M + doc.getTextWidth(wa);
-  doc.setDrawColor(...NAVY); doc.setLineWidth(0.2); doc.line(M, y + 0.8, xw, y + 0.8);
-  doc.setTextColor(...TEXTO); doc.text(sep, xw, y);
-  const xs = xw + doc.getTextWidth(sep);
-  doc.setTextColor(...NAVY); doc.textWithLink(web, xs, y, { url: WEB });
-  doc.line(xs, y + 0.8, xs + doc.getTextWidth(web), y + 0.8);
-  y += lh(11) + 1.5;
-  parrafo("Programa completo: Q1,000.", { size: 9, color: GRIS });
-  seccion("Lo que puedes trabajar con acompañamiento", 30);
-  parrafo(d.foco);
-  d.ruta?.preguntas.forEach((pregunta) => parrafo(`• ${pregunta}`));
-  parrafo(`Hoy marcaste tu claridad en ${d.claridad} de 10. En el Programa RUMBO trabajamos juntos para que tengas más claridad sobre tus metas y decisiones.`);
-  asegurar(lh(11));
-  doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(...NAVY);
-  doc.textWithLink("WhatsApp +502 5437-2899", M, y, { url: WHATSAPP });
+  doc.text(sep, xw, y);
+  doc.textWithLink(web, xw + doc.getTextWidth(sep), y, { url: WEB });
   y += lh(11) + 1.5;
   parrafo("Esta herramienta no reemplaza un proceso terapéutico.", { size: 9, color: GRIS });
   parrafo(FUENTES.investigacion, { size: 9, color: GRIS });

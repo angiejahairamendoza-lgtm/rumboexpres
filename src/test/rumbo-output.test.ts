@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HabilidadSchema, RutaSchema, validarRuta } from "@/lib/rumbo-output";
-import { seleccionarFoco } from "@/lib/rumbo-data";
+import { seleccionarFoco, frasePresentacion, programaPrecio } from "@/lib/rumbo-data";
 import { leerGuardado } from "@/lib/rumbo-store";
 
 const ruta = () => ({
@@ -27,17 +27,30 @@ describe("contratos de resultados", () => {
   it("los pasos duran como máximo 20 minutos", () => {
     expect(validarRuta(ruta(), "Media").pasos).toHaveLength(4);
     const r = ruta(); r.pasos[1] = { titulo: "Explorar", proposito: "Conocer", accion: "Puedes anotar.", tiempo: "21 min" };
-    expect(() => validarRuta(r, "Media")).toThrow();
+    expect(validarRuta(r, "Media").pasos[1]?.tiempo).toBe("20 min");
   });
   it("con Casi nada el máximo sigue siendo 15 minutos", () => {
     const r = ruta(); r.pasos = r.pasos.map((p, i) => ({ ...p, tiempo: i === 0 ? "5 min" : "15 min" }));
     expect(validarRuta(r, "Casi nada").pasos).toHaveLength(4);
     r.pasos[1] = { titulo: "Explorar", proposito: "Conocer", accion: "Puedes anotar.", tiempo: "16 min" };
-    expect(() => validarRuta(r, "Casi nada")).toThrow();
+    expect(validarRuta(r, "Casi nada").pasos[1]?.tiempo).toBe("15 min");
   });
   it("el primer paso es muy fácil, de cinco minutos o menos", () => {
     const r = ruta(); r.pasos[0] = { titulo: "Empezar", proposito: "Avanzar", accion: "Puedes anotar.", tiempo: "6 min" };
-    expect(() => validarRuta(r, "Mucha")).toThrow();
+    expect(validarRuta(r, "Mucha").pasos[0]?.tiempo).toBe("5 min");
+  });
+  it("acepta minutos y normaliza los tiempos sin fallar", () => {
+    const r = ruta(); r.pasos = r.pasos.map((p, i) => ({ ...p, tiempo: ["30 minutos", "12 minutos", "99 min", "sin dato"][i] ?? "" }));
+    expect(validarRuta(r, "Casi nada").pasos.map((p) => p.tiempo)).toEqual(["5 min", "12 min", "15 min", "15 min"]);
+    expect(() => validarRuta({ ...r, pasos: [{ titulo: "Falta estructura" }] }, "Media")).toThrow();
+  });
+  it("elimina habilidades repetidas sin distinguir mayúsculas", () => {
+    expect(frasePresentacion(["Soporte técnico", "SOPORTE TÉCNICO", "Reportes en Excel"], [])).toBe("Tengo experiencia en soporte técnico y reportes en Excel.");
+    expect(frasePresentacion(["Inglés", "inglés", "Organización"], [0, 1])).toBe("Tengo experiencia en inglés.");
+  });
+  it("el precio público es USD 140 / Q1,000 y los enlaces de empresa no llevan precio", () => {
+    expect(programaPrecio(null)).toBe("Programa RUMBO: 4 sesiones en línea · USD 140 / Q1,000");
+    expect(programaPrecio("empresa")).toBe("Programa RUMBO: 4 sesiones en línea");
   });
 });
 

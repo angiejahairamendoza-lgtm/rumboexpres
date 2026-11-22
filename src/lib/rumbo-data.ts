@@ -208,9 +208,14 @@ export const EJEMPLOS_TAREAS = ["Calmo a clientes molestos", "Atiendo en inglés
 /** Frase para presentarse: con las favoritas si las hay; si no, con las primeras habilidades. */
 export function frasePresentacion(habilidades: string[], favoritas: number[]) {
   const idx = favoritas.length ? favoritas : habilidades.slice(0, 3).map((_, i) => i);
-  const n = idx.map((i) => habilidades[i]?.trim() ?? "").filter(Boolean).map((h) => h.charAt(0).toLowerCase() + h.slice(1));
+  const vistos = new Set<string>();
+  const n = idx.map((i) => habilidades[i]?.trim() ?? "").filter((h) => {
+    const clave = h.toLocaleLowerCase("es-GT");
+    if (!h || vistos.has(clave)) return false;
+    vistos.add(clave); return true;
+  }).map((h) => h.charAt(0).toLowerCase() + h.slice(1));
   if (!n.length) return "";
-  const ultima = n[n.length - 1]!;
+  const ultima = n.at(-1) ?? "";
   const conY = n.length > 2 && n.some((h) => /\s(y|e)\s/.test(h));
   const lista = n.length === 1 ? ultima : `${n.slice(0, -1).join(", ")}${conY ? "," : ""} ${conjuncion(ultima)} ${ultima}`;
   return `Tengo experiencia en ${lista}.`;
@@ -243,3 +248,6 @@ export function fechaRevision(hoy = new Date()) {
 
 export const WHATSAPP = "https://wa.me/50254372899?text=" + encodeURIComponent("Hola, Licda. Angie. Hice la ruta de RUMBO Exprés y me gustaría seguir el proceso con usted.");
 export const WEB = "https://angiemendoza.lovable.app";
+export function programaPrecio(empresa: string | null) {
+  return empresa === null ? "Programa RUMBO: 4 sesiones en línea · USD 140 / Q1,000" : "Programa RUMBO: 4 sesiones en línea";
+}
