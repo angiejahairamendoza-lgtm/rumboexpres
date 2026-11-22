@@ -162,9 +162,34 @@ export function interesTexto(a: Tipo, b: Tipo) {
 }
 
 export const VALORES = [
-  "Estabilidad económica", "Autonomía", "Ayudar a otros", "Aprender y crecer", "Reconocimiento",
-  "Equilibrio con mi vida personal", "Crear cosas nuevas", "Trabajar en equipo", "Prestaciones y seguridad",
+  "Logro", "Independencia", "Reconocimiento", "Relaciones", "Apoyo", "Condiciones de trabajo",
 ];
+export const VALORES_DESCRIPCIONES = [
+  "usar tus capacidades y sentir que logras algo.",
+  "trabajar con autonomía y tomar tus propias decisiones.",
+  "crecer, avanzar y que se valore tu trabajo.",
+  "buen ambiente con tus compañeros y ayudar a otras personas.",
+  "una empresa y jefes que respaldan y tratan bien a su personal.",
+  "seguridad laboral, buen salario y un horario adecuado.",
+];
+export const MAX_VALORES = 3;
+export const CRECER_EMPRESA = ["Sí", "No", "Todavía no lo sé"];
+export function aplicaCrecerEmpresa(situacion: number | null) {
+  return situacion === 0 || situacion === 1;
+}
+export function respuestaCrecerEmpresa(situacion: number | null, respuesta: string | null) {
+  return aplicaCrecerEmpresa(situacion) && respuesta !== null && CRECER_EMPRESA.includes(respuesta) ? respuesta : null;
+}
+export function elegirValor(elegidos: number[], indice: number) {
+  return elegidos.includes(indice) ? elegidos.filter((i) => i !== indice)
+    : elegidos.length < MAX_VALORES && VALORES[indice] ? [...elegidos, indice] : elegidos;
+}
+export const FUENTES = {
+  bienestar: "Basado en el Índice de Bienestar WHO-5 de la Organización Mundial de la Salud (OMS).",
+  intereses: "Basado en el modelo de intereses vocacionales de Holland (RIASEC).",
+  valores: "Basado en los valores de trabajo de O*NET.",
+  investigacion: "Basado en la investigación «Supervivencia o autorrealización: permanencia, transición y proyecto de vida en trabajadores de call center», Licda. Angie Mendoza (2026).",
+};
 export const CONDICIONES = [
   "Libertad y privacidad", "Horario fijo", "Trabajo remoto", "Menos llamadas", "Un espacio tranquilo",
   "Ingresos más altos aunque sean variables",
@@ -207,5 +232,5 @@ export function fechaRevision(hoy = new Date()) {
   return d.toLocaleDateString("es-GT", { day: "numeric", month: "long", year: "numeric" });
 }
 
-export const WHATSAPP = "https://wa.me/50254372899";
+export const WHATSAPP = "https://wa.me/50254372899?text=" + encodeURIComponent("Hola, Licda. Angie. Hice la ruta de RUMBO Exprés y me gustaría seguir el proceso con usted.");
 export const WEB = "https://angiemendoza.lovable.app";

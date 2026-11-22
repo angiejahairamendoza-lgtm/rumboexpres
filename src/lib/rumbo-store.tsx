@@ -8,6 +8,7 @@ export type Estado = {
   jornada: number | null;
   edad: number | null;
   situacion: number | null;
+  crecerEmpresa: string | null;
   necesidad: number | null;
   marcha: number | null;
   proyecto: string;
@@ -28,7 +29,7 @@ export type Estado = {
 };
 
 export const estadoInicial = (): Estado => ({
-  pantalla: "bienvenida", who5: [null, null, null, null, null], jornada: null, edad: null, situacion: null,
+  pantalla: "bienvenida", who5: [null, null, null, null, null], jornada: null, edad: null, situacion: null, crecerEmpresa: null,
   necesidad: null, marcha: null, proyecto: "", anio: null, claridad: 5, actividades: [], valores: [],
   condiciones: [], tareas: ["", "", ""], habilidades: null, favoritas: [], frase: "", finanzas: null,
   finanzasSaltado: false, ruta: null, rutaFecha: null, calificacion: null,

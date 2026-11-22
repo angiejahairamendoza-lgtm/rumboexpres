@@ -14,9 +14,31 @@ export type Database = {
   }
   public: {
     Tables: {
+      clics_whatsapp: {
+        Row: {
+          empresa: string | null
+          fecha: string
+          id: string
+          perfil: string
+        }
+        Insert: {
+          empresa?: string | null
+          fecha?: string
+          id?: string
+          perfil: string
+        }
+        Update: {
+          empresa?: string | null
+          fecha?: string
+          id?: string
+          perfil?: string
+        }
+        Relationships: []
+      }
       resultados: {
         Row: {
           calificacion: number
+          crecer_empresa: string | null
           empresa: string | null
           energia: string
           fecha: string
@@ -29,6 +51,7 @@ export type Database = {
         }
         Insert: {
           calificacion: number
+          crecer_empresa?: string | null
           empresa?: string | null
           energia: string
           fecha?: string
@@ -41,6 +64,7 @@ export type Database = {
         }
         Update: {
           calificacion?: number
+          crecer_empresa?: string | null
           empresa?: string | null
           energia?: string
           fecha?: string

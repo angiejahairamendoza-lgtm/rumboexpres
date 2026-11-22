@@ -94,7 +94,7 @@ Reglas obligatorias:
 - Si energia="baja": la semana 1 se titula "Recuperar energía antes de decidir", con descanso y cuidado del cuerpo, e incluye como opción sin presionar la frase: "Si quieres, puedes conversar con una psicóloga".
 - Si el margen es negativo: la semana 1 se enfoca en saber cuánto falta y en opciones de ingreso puente que usen sus habilidades favoritas y respeten sus condiciones. (Si además la energía es baja, combina ambos con cuidado en la semana 1.)
 - Si tiene proyecto o meta con números o que genere ingresos: incluye un paso para calcular cuántos clientes o ventas necesita por semana.
-- Usa sus valores y condiciones (ej.: si eligió "Equilibrio con mi vida personal", la revisión de la semana 4 lo incluye).
+- Usa sus valores y condiciones (ej.: si eligió "Condiciones de trabajo", la revisión de la semana 4 lo incluye).
 - Perfil A: sostener el proyecto sin agotarse; ingresos y orden. Perfil B: identificar roles o condiciones mejores en su área y preparar el movimiento. Perfil C: pasos muy pequeños que devuelvan la sensación de avance.
 - Respeta su energía al terminar la jornada: si es "Casi nada", pasos de 15 minutos o menos.
 - Nunca recomiendes renunciar impulsivamente. Nunca prometas empleo ni ingresos. No des asesoría financiera profesional.

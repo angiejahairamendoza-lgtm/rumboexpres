@@ -8,6 +8,20 @@
       "when": 1795200279177,
       "tag": "0000_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795318112396,
+      "tag": "0001_crecer_empresa_y_clics_whatsapp",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795318381453,
+      "tag": "0002_limitar_clics_whatsapp_a_insercion",
+      "breakpoints": true
     }
   ]
 }

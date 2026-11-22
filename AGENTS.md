@@ -29,5 +29,6 @@ use the editor.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
 
-- RUMBO flow state lives only in browser localStorage with a 24h expiry (src/lib/rumbo-store.tsx); the only DB write is one anonymous insert-only row in `resultados` on rating — privacy requirement of the PRD.
+- RUMBO flow state lives only in browser localStorage with a 24h expiry; persist only anonymous rating rows in `resultados` and click rows in `clics_whatsapp` to keep personal flow data private.
+- Keep anonymous WhatsApp writes and conditional growth-answer serialization in `src/lib/rumbo-results.ts` so every app link uses the same narrow data contract.
 - AI calls go through server functions in src/lib/rumbo-ai.functions.ts using strict json_schema output; scoring rules (energy, profile, interests, margin) are pure functions in src/lib/rumbo-data.ts covered by src/test/rumbo-rules.test.ts.

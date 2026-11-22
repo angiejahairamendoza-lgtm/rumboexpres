@@ -9,14 +9,15 @@ import * as D from "@/lib/rumbo-data";
 import { traducirHabilidades, generarRuta } from "@/lib/rumbo-ai.functions";
 import { descargarPDF } from "@/lib/rumbo-pdf";
 import { supabase } from "@/integrations/supabase/client";
+import { datosCrecimiento, registrarClicWhatsApp } from "@/lib/rumbo-results";
 
 type Id =
-  | "bienvenida" | "energia" | "jornada" | "energiaBaja" | "edad" | "situacion" | "necesidad" | "marcha"
+  | "bienvenida" | "energia" | "jornada" | "energiaBaja" | "edad" | "situacion" | "crecerEmpresa" | "necesidad" | "marcha"
   | "anio" | "claridad" | "perfil" | "actividades" | "interesRes" | "valores" | "condiciones" | "tareas"
   | "habilidades" | "finanzas" | "finanzasRes" | "ruta" | "cierre";
 
 const PASO: Record<Id, number> = {
-  bienvenida: 0, energia: 1, jornada: 1, energiaBaja: 1, edad: 2, situacion: 2, necesidad: 2, marcha: 2,
+  bienvenida: 0, energia: 1, jornada: 1, energiaBaja: 1, edad: 2, situacion: 2, crecerEmpresa: 2, necesidad: 2, marcha: 2,
   anio: 2, claridad: 2, perfil: 2, actividades: 3, interesRes: 3, valores: 3, condiciones: 3, tareas: 4,
   habilidades: 4, finanzas: 5, finanzasRes: 5, ruta: 6, cierre: 7,
 };
@@ -25,7 +26,9 @@ function pantallas(s: Estado): Id[] {
   const energia = s.who5.every((v) => v !== null) ? D.calcularEnergia(s.who5 as number[]) : null;
   const l: Id[] = ["bienvenida", "energia", "jornada"];
   if (energia === "baja") l.push("energiaBaja");
-  l.push("edad", "situacion", "necesidad", "marcha", "anio", "claridad", "perfil", "actividades", "interesRes",
+  l.push("edad", "situacion");
+  if (D.aplicaCrecerEmpresa(s.situacion)) l.push("crecerEmpresa");
+  l.push("necesidad", "marcha", "anio", "claridad", "perfil", "actividades", "interesRes",
     "valores", "condiciones", "tareas", "habilidades", "finanzas");
   if (s.finanzas) l.push("finanzasRes");
   l.push("ruta", "cierre");
@@ -42,6 +45,14 @@ export function derivados(s: Estado) {
 
 export function Flow({ empresa }: { empresa: string | null }) {
   const { s, set, listo, reset } = useRumbo();
+  const [confirmarReset, setConfirmarReset] = useState(false);
+  const [descargando, setDescargando] = useState(false);
+  const onWhatsApp = () => { void registrarClicWhatsApp(empresa, derivados(s).perfil); };
+  const descargarAntes = async () => {
+    setDescargando(true);
+    try { await descargarResumen(s); setConfirmarReset(false); }
+    finally { setDescargando(false); }
+  };
   const lista = useMemo(() => pantallas(s), [s]);
   const id = (lista.includes(s.pantalla as Id) ? s.pantalla : "bienvenida") as Id;
   const idx = lista.indexOf(id);
@@ -69,7 +80,7 @@ export function Flow({ empresa }: { empresa: string | null }) {
         </div>
         {idx > 0 && (
           <div className="mt-1 text-right">
-            <button type="button" onClick={() => { reset(); window.scrollTo({ top: 0 }); }} className="text-xs text-muted-foreground underline underline-offset-4">Empezar de nuevo</button>
+            <Button variant="quiet" size="sm" onClick={() => setConfirmarReset(true)} className="h-auto p-0 text-xs font-normal text-muted-foreground underline underline-offset-4">Empezar de nuevo</Button>
           </div>
         )}
         {paso >= 1 && (
@@ -79,9 +90,17 @@ export function Flow({ empresa }: { empresa: string | null }) {
         )}
       </header>
       <main key={id} className="screen-in flex-1 py-7">
-        <Pantalla id={id} siguiente={siguiente} ir={ir} empresa={empresa} />
+        <Pantalla id={id} siguiente={siguiente} empresa={empresa} onReset={() => setConfirmarReset(true)} onWhatsApp={onWhatsApp} />
       </main>
-      <PieAyuda />
+      <PieAyuda onWhatsApp={onWhatsApp} />
+      <Dialog open={confirmarReset} onOpenChange={setConfirmarReset}>
+        <DialogContent className="max-w-sm rounded-2xl" aria-describedby={undefined}>
+          <DialogHeader><DialogTitle>{id === "cierre" ? "¿Ya descargaste tu PDF? Si empiezas de nuevo, se borra tu resultado." : "¿Quieres empezar de nuevo?"}</DialogTitle></DialogHeader>
+          {id === "cierre" ? <Button variant="soft" onClick={descargarAntes} disabled={descargando}>{descargando ? <Loader2 className="animate-spin" /> : <Download />} Descargar PDF</Button>
+            : <Button variant="soft" onClick={() => setConfirmarReset(false)}>Cancelar</Button>}
+          <Button variant="hero" disabled={descargando} onClick={() => { reset(); setConfirmarReset(false); window.scrollTo({ top: 0 }); }}>{id === "cierre" ? "Sí, empezar de nuevo" : "Sí"}</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -120,8 +139,12 @@ function UnaOpcion({ titulo, sub, opciones, valor, onPick }: { titulo: ReactNode
 const toggle = (arr: number[], i: number, max: number) =>
   arr.includes(i) ? arr.filter((x) => x !== i) : arr.length < max ? [...arr, i] : arr;
 
-function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Partial<Estado>) => void; ir: (i: Id) => void; empresa: string | null }) {
-  const { s, set, reset } = useRumbo();
+function Fuente({ texto }: { texto: string }) {
+  return <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{texto}</p>;
+}
+
+function Pantalla({ id, siguiente, empresa, onReset, onWhatsApp }: { id: Id; siguiente: (p?: Partial<Estado>) => void; empresa: string | null; onReset: () => void; onWhatsApp: () => void }) {
+  const { s, set } = useRumbo();
   const d = derivados(s);
 
   switch (id) {
@@ -160,6 +183,7 @@ function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Part
               </fieldset>
             ))}
           </div>
+          <Fuente texto={D.FUENTES.bienestar} />
           <Continuar disabled={s.who5.some((v) => v === null)} onClick={() => siguiente()} />
         </>
       );
@@ -185,7 +209,9 @@ function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Part
     case "edad":
       return (<><UnaOpcion titulo="Tu situación y tu punto de partida" sub="¿Qué edad tienes?" opciones={D.EDADES} valor={s.edad} onPick={(i) => set({ edad: i })} /><Continuar disabled={s.edad === null} onClick={() => siguiente()} /></>);
     case "situacion":
-      return (<><UnaOpcion titulo="¿Cuál es tu situación hoy?" opciones={D.SITUACIONES} valor={s.situacion} onPick={(i) => set({ situacion: i })} /><Continuar disabled={s.situacion === null} onClick={() => siguiente()} /></>);
+      return (<><UnaOpcion titulo="¿Cuál es tu situación hoy?" opciones={D.SITUACIONES} valor={s.situacion} onPick={(i) => set({ situacion: i, crecerEmpresa: null })} /><Continuar disabled={s.situacion === null} onClick={() => siguiente()} /></>);
+    case "crecerEmpresa":
+      return (<><UnaOpcion titulo="¿Te gustaría crecer dentro de la empresa donde trabajas?" opciones={D.CRECER_EMPRESA} valor={s.crecerEmpresa === null ? null : D.CRECER_EMPRESA.indexOf(s.crecerEmpresa)} onPick={(i) => set({ crecerEmpresa: D.CRECER_EMPRESA[i] ?? null })} /><Continuar disabled={s.crecerEmpresa === null} onClick={() => siguiente()} /></>);
     case "necesidad":
       return (<><UnaOpcion titulo="¿Qué es lo que más necesitas ahora?" opciones={D.NECESIDADES.map((n) => n.label)} valor={s.necesidad} onPick={(i) => set({ necesidad: i })} /><Continuar disabled={s.necesidad === null} onClick={() => siguiente()} /></>);
     case "marcha":
@@ -243,6 +269,7 @@ function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Part
           <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Tus intereses</p>
           <h1 className="mt-1 text-3xl font-extrabold">{d.t1} + {d.t2}</h1>
           <p className="mt-4 rounded-2xl bg-field p-5 text-lg">{d.interes}</p>
+          <Fuente texto={D.FUENTES.intereses} />
           <Continuar onClick={() => siguiente()} />
         </>
       );
@@ -250,7 +277,8 @@ function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Part
       return (
         <>
           <Titulo sub={`${s.valores.length} de 3`}>¿Qué es lo que más valoras en un trabajo? Elige 3.</Titulo>
-          <div className="space-y-2.5">{D.VALORES.map((v, i) => <Opcion multi key={v} on={s.valores.includes(i)} onClick={() => set({ valores: toggle(s.valores, i, 3) })}>{v}</Opcion>)}</div>
+          <div className="space-y-2.5">{D.VALORES.map((v, i) => <Opcion multi key={v} on={s.valores.includes(i)} onClick={() => set({ valores: D.elegirValor(s.valores, i) })}><span className="block font-semibold">{v}</span><span className="mt-1 block text-sm text-muted-foreground">{D.VALORES_DESCRIPCIONES[i]}</span></Opcion>)}</div>
+          <Fuente texto={D.FUENTES.valores} />
           <Continuar disabled={s.valores.length !== 3} onClick={() => siguiente()} />
         </>
       );
@@ -275,7 +303,7 @@ function Pantalla({ id, siguiente, ir, empresa }: { id: Id; siguiente: (p?: Part
         </>
       );
     case "ruta": return <Ruta siguiente={siguiente} />;
-    case "cierre": return <Cierre empresa={empresa} onReset={() => { reset(); ir("bienvenida"); }} />;
+    case "cierre": return <Cierre empresa={empresa} onReset={onReset} onWhatsApp={onWhatsApp} />;
   }
 }
 
@@ -485,7 +513,18 @@ function RutaVista({ ruta, fecha }: { ruta: NonNullable<Estado["ruta"]>; fecha: 
   );
 }
 
-function Cierre({ empresa, onReset }: { empresa: string | null; onReset: () => void }) {
+async function descargarResumen(s: Estado) {
+  const d = derivados(s);
+  await descargarPDF({
+    energiaBaja: d.energia === "baja",
+    perfilNombre: D.PERFIL_NOMBRE[d.perfil], perfilTexto: D.perfilTexto(d.perfil, d.economico), frase: s.frase,
+    interes: d.interes, valores: s.valores.flatMap((i) => D.VALORES[i] ? [D.VALORES[i]] : []), condiciones: s.condiciones.flatMap((i) => D.CONDICIONES[i] ? [D.CONDICIONES[i]] : []),
+    habilidades: s.habilidades ?? [], favoritas: s.favoritas, margen: s.finanzas ? D.margenTexto(s.finanzas) : null,
+    ruta: s.ruta ?? [], fechaRevision: s.rutaFecha ?? D.fechaRevision(),
+  });
+}
+
+function Cierre({ empresa, onReset, onWhatsApp }: { empresa: string | null; onReset: () => void; onWhatsApp: () => void }) {
   const { s, set } = useRumbo();
   const d = derivados(s);
   const [guardando, setGuardando] = useState(false);
@@ -498,6 +537,7 @@ function Cierre({ empresa, onReset }: { empresa: string | null; onReset: () => v
     const { error } = await supabase.from("resultados").insert({
       empresa, rango_edad: D.EDADES[s.edad ?? 0]!, situacion: D.SITUACIONES[s.situacion ?? 0]!,
       perfil: d.perfil, energia: d.energia, interes_1: d.t1, interes_2: d.t2, calificacion: n,
+      ...datosCrecimiento(s.situacion, s.crecerEmpresa),
     });
     setGuardando(false);
     if (!error) set({ calificacion: n });
@@ -505,13 +545,7 @@ function Cierre({ empresa, onReset }: { empresa: string | null; onReset: () => v
   const bajar = async () => {
     setPdf(true);
     try {
-      await descargarPDF({
-        energiaBaja: d.energia === "baja",
-        perfilNombre: D.PERFIL_NOMBRE[d.perfil], perfilTexto: D.perfilTexto(d.perfil, d.economico), frase: s.frase,
-        interes: d.interes, valores: s.valores.map((i) => D.VALORES[i]!), condiciones: s.condiciones.map((i) => D.CONDICIONES[i]!),
-        habilidades: s.habilidades ?? [], favoritas: s.favoritas, margen: s.finanzas ? D.margenTexto(s.finanzas) : null,
-        ruta: s.ruta ?? [], fechaRevision: fecha,
-      });
+      await descargarResumen(s);
     } finally { setPdf(false); }
   };
 
@@ -521,8 +555,8 @@ function Cierre({ empresa, onReset }: { empresa: string | null; onReset: () => v
       <div className="space-y-4">
         <Bloque t={`Perfil: ${D.PERFIL_NOMBRE[d.perfil]}`}>{D.perfilTexto(d.perfil, d.economico)}</Bloque>
         {s.frase && <p className="rounded-2xl bg-primary/20 p-4 text-lg font-extrabold">{s.frase}</p>}
-        <Bloque t="Intereses">{d.interes}</Bloque>
-        <Bloque t="Valores">{s.valores.map((i) => D.VALORES[i]).join(" · ")}</Bloque>
+        <Bloque t="Intereses">{d.interes}<Fuente texto={D.FUENTES.intereses} /></Bloque>
+        <Bloque t="Valores">{s.valores.map((i) => D.VALORES[i]).join(" · ")}<Fuente texto={D.FUENTES.valores} /></Bloque>
         <Bloque t="Habilidades traducidas">
           <ul className="space-y-2">
             {(s.habilidades ?? []).map((h, i) => (
@@ -539,7 +573,7 @@ function Cierre({ empresa, onReset }: { empresa: string | null; onReset: () => v
         <p className="mt-3 leading-relaxed">Este es un primer paso. En el Programa RUMBO trabajas tu ruta con la Licda. Angie Mendoza, psicóloga y orientadora vocacional, en 4 sesiones en línea.</p>
         <p className="mt-2 text-sm text-muted-foreground">Programa completo: Q1,000.</p>
         <div className="mt-5 grid gap-2">
-          <Button variant="hero" size="xl" asChild><a href={D.WHATSAPP} target="_blank" rel="noreferrer"><MessageCircle /> Escribir por WhatsApp</a></Button>
+          <Button variant="hero" size="xl" asChild><a href={D.WHATSAPP} onClick={onWhatsApp} target="_blank" rel="noreferrer"><MessageCircle /> Escribir por WhatsApp</a></Button>
           <a href={D.WEB} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 py-2 text-sm font-bold underline decoration-primary decoration-2 underline-offset-4"><Globe className="size-4" /> Conocer el Programa RUMBO</a>
         </div>
       </section>
@@ -558,6 +592,7 @@ function Cierre({ empresa, onReset }: { empresa: string | null; onReset: () => v
         {s.calificacion !== null && <p className="mt-2 text-sm text-muted-foreground">Gracias por contarnos.</p>}
       </div>
 
+      <Fuente texto={D.FUENTES.investigacion} />
       <Button variant="quiet" className="mt-6 w-full" onClick={onReset}><RotateCcw /> Empezar de nuevo</Button>
     </>
   );
@@ -572,7 +607,7 @@ function Bloque({ t, children }: { t: string; children: ReactNode }) {
   );
 }
 
-function PieAyuda() {
+function PieAyuda({ onWhatsApp }: { onWhatsApp: () => void }) {
   return (
     <footer className="border-t py-4 text-center">
       <Dialog>
@@ -584,7 +619,7 @@ function PieAyuda() {
             <DialogTitle>¿Necesitas hablar con alguien ahora?</DialogTitle>
             <DialogDescription>Puedes escribirle a la Licda. Angie Mendoza, psicóloga clínica.</DialogDescription>
           </DialogHeader>
-          <Button variant="hero" size="xl" asChild><a href={D.WHATSAPP} target="_blank" rel="noreferrer"><MessageCircle /> WhatsApp Licda. Angie Mendoza</a></Button>
+          <Button variant="hero" size="xl" asChild><a href={D.WHATSAPP} onClick={onWhatsApp} target="_blank" rel="noreferrer"><MessageCircle /> WhatsApp Licda. Angie Mendoza</a></Button>
           <p className="text-sm font-semibold">Si estás en peligro, llama a los servicios de emergencia de tu país.</p>
         </DialogContent>
       </Dialog>
