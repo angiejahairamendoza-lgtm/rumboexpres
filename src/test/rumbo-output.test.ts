@@ -5,7 +5,7 @@ import { leerGuardado } from "@/lib/rumbo-store";
 
 const ruta = () => ({
   area_nueva: { nombre: "Gestión documental", que_se_hace: "Organizar archivos.", por_que_encaja: "Usas tu capacidad de organizar.", primer_paso: "Puedes revisar un archivo." },
-  pasos: Array.from({ length: 4 }, (_, i) => ({ titulo: `Explorar ${i + 1}`, proposito: "Conocer una opción.", accion: "Puedes anotar una idea en tu celular.", tiempo: i === 0 ? "5 min" : "20 min", subpasos: ["Puedes abrir una nota.", "Puedes escribir tu idea.", "Puedes guardar la nota."] })),
+  pasos: Array.from({ length: 4 }, (_, i) => ({ titulo: `Explorar ${i + 1}`, proposito: "Conocer una opción.", accion: "Puedes anotar una idea en tu celular.", tiempo: i === 0 ? "5 min" : "20 min", listo: "Ya tengo una nota guardada.", preguntas_guia: ["¿Qué harás con esto?"], subpasos: ["Puedes abrir una nota.", "Puedes escribir tu idea.", "Puedes guardar la nota."] })),
   preguntas: ["¿Qué te detiene al elegir?", "¿Qué necesitarías para decidir?"],
 });
 
@@ -31,25 +31,24 @@ describe("contratos de resultados", () => {
     for (const n of [3, 5]) expect(RutaSchema.safeParse({ ...ruta(), pasos: Array.from({ length: n }, () => ruta().pasos[0]) }).success).toBe(false);
     for (const preguntas of [["Una"], ["Una", "Dos", "Tres"]]) expect(RutaSchema.safeParse({ ...ruta(), preguntas }).success).toBe(false);
   });
-  it("los pasos duran como máximo 20 minutos", () => {
-    expect(validarRuta(ruta(), "Media").pasos).toHaveLength(4);
-    const r = ruta(); r.pasos[1] = { titulo: "Explorar", proposito: "Conocer", accion: "Puedes anotar.", tiempo: "21 min", subpasos: ["Puedes abrir una nota.", "Puedes escribir.", "Puedes guardar."] };
-    expect(validarRuta(r, "Media").pasos[1]?.tiempo).toBe("20 min");
+  it("con energía suficiente cada paso dura hasta 45 minutos, incluido el primero", () => {
+    const r = ruta(); r.pasos = r.pasos.map((p) => ({ ...p, tiempo: "60 min" })); r.pasos[0]!.tiempo = "30 min";
+    expect(validarRuta(r, "suficiente", "Media").pasos.map((p) => p.tiempo)).toEqual(["30 min", "45 min", "45 min", "45 min"]);
   });
-  it("con Casi nada el máximo sigue siendo 15 minutos", () => {
-    const r = ruta(); r.pasos = r.pasos.map((p, i) => ({ ...p, tiempo: i === 0 ? "5 min" : "15 min" }));
-    expect(validarRuta(r, "Casi nada").pasos).toHaveLength(4);
-    r.pasos[1] = { titulo: "Explorar", proposito: "Conocer", accion: "Puedes anotar.", tiempo: "16 min", subpasos: ["Puedes abrir una nota.", "Puedes escribir.", "Puedes guardar."] };
-    expect(validarRuta(r, "Casi nada").pasos[1]?.tiempo).toBe("15 min");
+  it("con energía baja el máximo es 20 minutos y la semana 1 cinco", () => {
+    const r = ruta(); r.pasos = r.pasos.map((p) => ({ ...p, tiempo: "30 min" }));
+    expect(validarRuta(r, "baja", "Media").pasos.map((p) => p.tiempo)).toEqual(["5 min", "20 min", "20 min", "20 min"]);
   });
-  it("el primer paso es muy fácil, de cinco minutos o menos", () => {
-    const r = ruta(); r.pasos[0] = { titulo: "Empezar", proposito: "Avanzar", accion: "Puedes anotar.", tiempo: "6 min", subpasos: ["Puedes abrir una nota.", "Puedes escribir.", "Puedes guardar."] };
-    expect(validarRuta(r, "Mucha").pasos[0]?.tiempo).toBe("5 min");
+  it("con Casi nada el máximo es 15 minutos", () => {
+    const r = ruta(); r.pasos = r.pasos.map((p) => ({ ...p, tiempo: "30 minutos" })); r.pasos[3]!.tiempo = "sin dato";
+    expect(validarRuta(r, "suficiente", "Casi nada").pasos.map((p) => p.tiempo)).toEqual(["15 min", "15 min", "15 min", "15 min"]);
+    expect(() => validarRuta({ ...r, pasos: [{ titulo: "Falta estructura" }] }, "suficiente", "Media")).toThrow();
   });
-  it("acepta minutos y normaliza los tiempos sin fallar", () => {
-    const r = ruta(); r.pasos = r.pasos.map((p, i) => ({ ...p, tiempo: ["30 minutos", "12 minutos", "99 min", "sin dato"][i] ?? "" }));
-    expect(validarRuta(r, "Casi nada").pasos.map((p) => p.tiempo)).toEqual(["5 min", "12 min", "15 min", "15 min"]);
-    expect(() => validarRuta({ ...r, pasos: [{ titulo: "Falta estructura" }] }, "Media")).toThrow();
+  it("cada paso exige señal de listo y una o dos preguntas guía", () => {
+    for (const [cambio, ok] of [[{ listo: "" }, false], [{ preguntas_guia: [] }, false], [{ preguntas_guia: ["a", "b", "c"] }, false], [{ preguntas_guia: ["a", "b"] }, true]] as const) {
+      const r = ruta(); r.pasos[1] = { ...r.pasos[1]!, ...cambio } as never;
+      expect(RutaSchema.safeParse(r).success).toBe(ok);
+    }
   });
   it("elimina habilidades repetidas sin distinguir mayúsculas", () => {
     expect(frasePresentacion(["Soporte técnico", "SOPORTE TÉCNICO", "Reportes en Excel"], [])).toBe("Tengo experiencia en soporte técnico y reportes en Excel.");

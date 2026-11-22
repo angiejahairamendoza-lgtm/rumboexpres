@@ -15,7 +15,7 @@ vi.mock("@tanstack/react-start", () => ({
 
 const ruta = {
   area_nueva: { nombre: "Planificación de personal", que_se_hace: "Organizar turnos.", por_que_encaja: "Usas tu organización.", primer_paso: "Puedes leer sobre planificación." },
-  pasos: Array.from({ length: 4 }, () => ({ titulo: "Explorar", proposito: "Conocer opciones.", accion: "Puedes revisar una vacante.", tiempo: "5 min", subpasos: ["Puedes abrir el portal.", "Puedes leer una vacante.", "Puedes guardar su enlace."] })),
+  pasos: Array.from({ length: 4 }, () => ({ titulo: "Explorar", proposito: "Conocer opciones.", accion: "Puedes revisar una vacante.", tiempo: "5 min", listo: "Ya tengo una nota guardada.", preguntas_guia: ["¿Qué harás con esto?"], subpasos: ["Puedes abrir el portal.", "Puedes leer una vacante.", "Puedes guardar su enlace."] })),
   preguntas: ["¿Qué necesitas para decidir?", "¿Qué te gustaría conocer?"],
 };
 beforeEach(() => {
@@ -97,13 +97,16 @@ describe("estudios, avances y profundidad", () => {
   });
   it("la primera semana de energía baja incluye pausas y reflexión sin dinero ni búsqueda", async () => {
     await generarRuta({ data: { ...contextoRuta(persona(), null), energia: "baja" } });
-    expect(instrucciones()).toContain("pausas de descanso y a reflexionar sobre qué es importante para la persona y qué quiere lograr, sin dinero, cifras ni búsqueda de empleo");
+    expect(instrucciones()).toContain("primero invita a recuperar energía con pausas de descanso y luego a definir el objetivo del mes");
     expect(instrucciones()).not.toContain("SOLO descanso");
   });
-  it("el tiempo cubre todos los subpasos y mantiene el primer paso de cinco minutos", async () => {
+  it("estructura fija de proyecto y tiempo según energía", async () => {
     await generarRuta({ data: contextoRuta(persona(), null) });
     expect(instrucciones()).toContain("El tiempo es el total de la acción CON todos sus subpasos");
-    expect(instrucciones()).toContain("de 5 minutos o menos en total");
+    for (const fase of ["Semana 1 · Enfoque", "Semana 2 · Recursos", "Semana 3 · Movimiento", "Semana 4 · Avance y revisión"]) expect(instrucciones()).toContain(fase);
+    expect(instrucciones()).toContain("Nunca asumas que la persona quiere cambiar de trabajo");
+    expect(instrucciones()).toContain("como máximo un paso de la ruta la usa");
+    expect(instrucciones()).not.toContain("de 5 minutos o menos en total");
     expect(instrucciones()).toContain('Cada subpaso empieza con una invitación explícita como "Puedes…"');
   });
 });

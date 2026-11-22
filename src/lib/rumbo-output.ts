@@ -10,15 +10,22 @@ export const RutaSchema = z.object({
   pasos: z.array(z.object({ titulo: texto, proposito: texto, accion: texto,
     tiempo: z.string(),
     subpasos: z.array(texto).min(3).max(4),
+    listo: texto,
+    preguntas_guia: z.array(texto).min(1).max(2),
   })).length(4),
   preguntas: z.array(texto).length(2),
 });
 export type RutaResultado = z.infer<typeof RutaSchema>;
-export function validarRuta(salida: unknown, energiaJornada: string): RutaResultado {
+/** Límite semanal por paso: 45 min con energía suficiente, 20 con energía baja, 15 con "Casi nada". */
+export function limiteMinutos(energia: string, energiaJornada: string, semana: number) {
+  if (energia === "baja" && semana === 0) return 5;
+  if (energiaJornada === "Casi nada") return 15;
+  return energia === "baja" ? 20 : 45;
+}
+export function validarRuta(salida: unknown, energia: string, energiaJornada: string): RutaResultado {
   const ruta = RutaSchema.parse(salida);
-  const limite = energiaJornada === "Casi nada" ? 15 : 20;
   return { ...ruta, pasos: ruta.pasos.map((p, i) => {
-    const maximo = i === 0 ? 5 : limite;
+    const maximo = limiteMinutos(energia, energiaJornada, i);
     const numero = Number(p.tiempo.match(/\d+(?:[.,]\d+)?/)?.[0]?.replace(",", "."));
     const minutos = Number.isFinite(numero) && numero > 0 ? Math.min(maximo, Math.max(1, Math.round(numero))) : maximo;
     return { ...p, tiempo: `${minutos} min` };
@@ -40,8 +47,8 @@ export const RutaJSONSchema = {
       required: ["nombre", "que_se_hace", "por_que_encaja", "primer_paso"],
       properties: { nombre: { type: "string" }, que_se_hace: { type: "string" }, por_que_encaja: { type: "string" }, primer_paso: { type: "string" } } },
     pasos: { type: "array", minItems: 4, maxItems: 4, items: {
-      type: "object", additionalProperties: false, required: ["titulo", "proposito", "accion", "tiempo", "subpasos"],
-      properties: { titulo: { type: "string" }, proposito: { type: "string" }, accion: { type: "string" }, tiempo: { type: "string" }, subpasos: { type: "array", minItems: 3, maxItems: 4, items: { type: "string" } } },
+      type: "object", additionalProperties: false, required: ["titulo", "proposito", "accion", "tiempo", "subpasos", "listo", "preguntas_guia"],
+      properties: { titulo: { type: "string" }, proposito: { type: "string" }, accion: { type: "string" }, tiempo: { type: "string" }, subpasos: { type: "array", minItems: 3, maxItems: 4, items: { type: "string" } }, listo: { type: "string" }, preguntas_guia: { type: "array", minItems: 1, maxItems: 2, items: { type: "string" } } },
     } },
     preguntas: { type: "array", minItems: 2, maxItems: 2, items: { type: "string" } },
   },

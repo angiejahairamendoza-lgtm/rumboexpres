@@ -544,6 +544,8 @@ function RutaVista({ ruta, fecha }: { ruta: NonNullable<Estado["ruta"]>; fecha: 
           </div>
           <p className="mt-3 text-sm"><span className="font-bold">Propósito:</span> {p.proposito}</p>
           <p className="mt-2 text-sm"><span className="font-bold">Acción:</span> {p.accion}</p>
+          <p className="mt-2 text-sm"><span className="font-bold">Listo cuando:</span> {p.listo}</p>
+          <div className="mt-2 text-sm"><p className="font-bold">Preguntas para pensar:</p><ul className="mt-1 list-disc space-y-1 pl-5">{p.preguntas_guia.map((q, j) => <li key={j}>{q}</li>)}</ul></div>
           <Collapsible className="mt-3">
             <CollapsibleTrigger asChild><Button variant="quiet" size="sm" className="group -ml-2">Ver cómo hacerlo <ChevronDown className="transition-transform group-data-[state=open]:rotate-180" /></Button></CollapsibleTrigger>
             <CollapsibleContent><ol className="mt-2 list-decimal space-y-2 pl-5 text-sm">{p.subpasos.map((subpaso, j) => <li key={j}>{subpaso}</li>)}</ol></CollapsibleContent>

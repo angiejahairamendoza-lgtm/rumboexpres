@@ -15,7 +15,7 @@ function abrir(pantalla: string, situacion = 0) {
     nivelEstudios: "Licenciatura", estudiaActualmente: "No estoy estudiando", carrera: "Psicología", avances: "Ya tengo web y redes sociales",
     valores: [0, 1, 2], frase: "Tengo experiencia en soporte técnico.", ruta: {
       area_nueva: { nombre: "Gestión documental", que_se_hace: "Ordenar documentos.", por_que_encaja: "Usas tu organización.", primer_paso: "Puedes revisar un archivo." },
-      pasos: Array.from({ length: 4 }, (_, i) => ({ titulo: `Paso ${i + 1}`, proposito: "Explorar.", accion: "Puedes anotar una idea.", tiempo: "5 min", subpasos: ["Puedes abrir una nota.", "Puedes escribir una idea.", "Puedes guardar tu nota."] })),
+      pasos: Array.from({ length: 4 }, (_, i) => ({ titulo: `Paso ${i + 1}`, proposito: "Explorar.", accion: "Puedes anotar una idea.", tiempo: "5 min", listo: "Ya tengo una nota guardada.", preguntas_guia: ["¿Qué harás con esto?"], subpasos: ["Puedes abrir una nota.", "Puedes escribir una idea.", "Puedes guardar tu nota."] })),
       preguntas: ["¿Qué te detiene?", "¿Qué necesitas para decidir?"],
     },
   } }));

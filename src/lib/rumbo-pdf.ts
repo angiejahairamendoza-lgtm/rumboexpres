@@ -130,6 +130,8 @@ export async function descargarPDF(d: DatosPDF) {
       const cl = lineas(`Propósito: ${p.proposito}`, 11, A);
       const ll = lineas(`Acción: ${p.accion}`, 11, A);
       const sl = p.subpasos.map((s, j) => lineas(`${j + 1}. ${s}`, 10.5, A - 3));
+      const li = lineas(`Listo cuando: ${p.listo}`, 11, A);
+      const pg = [lineas("Preguntas para pensar:", 11, A, true), ...p.preguntas_guia.map((q) => lineas(`• ${q}`, 10.5, A - 3))];
       const h = sem.length * lh(9.5) + tl.length * lh(11.5) + (cl.length + ll.length) * lh(11) + sl.reduce((total, ls) => total + ls.length * lh(10.5) + 1.5, 0) + 10;
       asegurar(h);
       y += 3;
@@ -144,7 +146,14 @@ export async function descargarPDF(d: DatosPDF) {
         for (const l of ls) { asegurar(lh(10.5)); escribir([l], X + 3, 10.5); }
         y += 1.5;
       });
-      y += 4;
+      for (const l of li) { asegurar(lh(11)); escribir([l], X, 11); }
+      pg.forEach((ls, k) => { for (const l of ls) { asegurar(lh(11)); escribir([l], k ? X + 3 : X, k ? 10.5 : 11, k === 0); } });
+      asegurar(lh(11) + 24);
+      y += 2;
+      escribir(lineas("¿Cómo me fue?", 11, A, true), X, 11, true, NAVY);
+      doc.setDrawColor(...GRIS); doc.setLineWidth(0.2);
+      for (let k = 0; k < 3; k++) { y += 7; doc.line(X, y, X + A, y); }
+      y += 6;
     });
   }
 

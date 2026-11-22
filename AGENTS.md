@@ -37,3 +37,4 @@ use the editor.
 - Pass company-link context and the applicable growth answer through the shared route-input builder to keep AI guidance neutral without persisting additional personal data.
 - Share education context through rumbo-studies.ts; serialize only categorical education answers for anonymous ratings so career and prior progress stay private.
 - Require three or four substeps in the shared AI route contract; collapse them by default in both app route views and print them fully with page-aware layout in the PDF.
+- Generate the route as a fixed four-phase project cycle (Enfoque, Recursos, Movimiento, Avance y revisión) with per-step done signal and guide questions; step time limits come from the pure energy rule in rumbo-output.ts so the AI cannot exceed them.
