@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Check, Download, Loader2, MessageCircle, RotateCcw, Star, Globe, Copy } from "lucide-react";
+import { ArrowLeft, Check, Download, Loader2, MessageCircle, RotateCcw, Star, Globe, Copy, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { contextoEstudios, datosEstudios, NIVELES_ESTUDIOS, ESTUDIA_ACTUALMENTE } from "@/lib/rumbo-studies";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useRumbo, type Estado } from "@/lib/rumbo-store";
 import * as D from "@/lib/rumbo-data";
@@ -15,20 +17,22 @@ type Id =
   | "bienvenida" | "energia" | "jornada" | "energiaBaja" | "edad" | "situacion" | "crecerEmpresa" | "necesidad" | "marcha"
   | "anio" | "claridad" | "perfil" | "actividades" | "interesRes" | "valores" | "condiciones" | "tareas"
   | "habilidades" | "finanzas" | "finanzasRes" | "ruta" | "cierre";
+type EstudiosId = "nivelEstudios" | "estudiaActualmente" | "carrera";
 
-const PASO: Record<Id, number> = {
+const PASO: Record<Id | EstudiosId, number> = {
+  nivelEstudios: 2, estudiaActualmente: 2, carrera: 2,
   bienvenida: 0, energia: 1, jornada: 1, energiaBaja: 1, edad: 2, situacion: 2, crecerEmpresa: 2, necesidad: 2, marcha: 2,
   anio: 2, claridad: 2, perfil: 2, actividades: 3, interesRes: 3, valores: 3, condiciones: 3, tareas: 4,
   habilidades: 4, finanzas: 5, finanzasRes: 5, ruta: 6, cierre: 7,
 };
 
-function pantallas(s: Estado): Id[] {
+function pantallas(s: Estado): (Id | EstudiosId)[] {
   const energia = s.who5.every((v) => v !== null) ? D.calcularEnergia(s.who5 as number[]) : null;
-  const l: Id[] = ["bienvenida", "energia", "jornada"];
+  const l: (Id | EstudiosId)[] = ["bienvenida", "energia", "jornada"];
   if (energia === "baja") l.push("energiaBaja");
   l.push("edad", "situacion");
   if (D.aplicaCrecerEmpresa(s.situacion)) l.push("crecerEmpresa");
-  l.push("necesidad", "marcha", "anio", "claridad", "perfil", "actividades", "interesRes",
+  l.push("nivelEstudios", "estudiaActualmente", "carrera", "necesidad", "marcha", "anio", "claridad", "perfil", "actividades", "interesRes",
     "valores", "condiciones", "tareas", "habilidades", "finanzas");
   if (s.finanzas) l.push("finanzasRes");
   l.push("ruta", "cierre");
@@ -54,9 +58,9 @@ export function Flow({ empresa }: { empresa: string | null }) {
     finally { setDescargando(false); }
   };
   const lista = useMemo(() => pantallas(s), [s]);
-  const id = (lista.includes(s.pantalla as Id) ? s.pantalla : "bienvenida") as Id;
+  const id = (lista.includes(s.pantalla as Id | EstudiosId) ? s.pantalla : "bienvenida") as Id | EstudiosId;
   const idx = lista.indexOf(id);
-  const ir = (to: Id) => { set({ pantalla: to }); window.scrollTo({ top: 0 }); };
+  const ir = (to: Id | EstudiosId) => { set({ pantalla: to }); window.scrollTo({ top: 0 }); };
   const siguiente = (desde?: Partial<Estado>) => {
     const nuevo = { ...s, ...desde };
     const l = pantallas(nuevo);
@@ -126,7 +130,7 @@ function Opcion({ on, onClick, children, multi }: { on: boolean; onClick: () => 
 function Continuar({ disabled, onClick, children = "Continuar" }: { disabled?: boolean; onClick: () => void; children?: ReactNode }) {
   return <div className="mt-8"><Button variant="hero" size="xl" disabled={disabled} onClick={onClick}>{children}</Button></div>;
 }
-function UnaOpcion({ titulo, sub, opciones, valor, onPick }: { titulo: ReactNode; sub?: string; opciones: string[]; valor: number | null; onPick: (i: number) => void }) {
+function UnaOpcion({ titulo, sub, opciones, valor, onPick }: { titulo: ReactNode; sub?: string; opciones: readonly string[]; valor: number | null; onPick: (i: number) => void }) {
   return (
     <>
       <Titulo sub={sub}>{titulo}</Titulo>
@@ -143,7 +147,7 @@ function Fuente({ texto }: { texto: string }) {
   return <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{texto}</p>;
 }
 
-function Pantalla({ id, siguiente, empresa, onReset, onWhatsApp }: { id: Id; siguiente: (p?: Partial<Estado>) => void; empresa: string | null; onReset: () => void; onWhatsApp: () => void }) {
+function Pantalla({ id, siguiente, empresa, onReset, onWhatsApp }: { id: Id | EstudiosId; siguiente: (p?: Partial<Estado>) => void; empresa: string | null; onReset: () => void; onWhatsApp: () => void }) {
   const { s, set } = useRumbo();
   const d = derivados(s);
 
@@ -214,6 +218,12 @@ function Pantalla({ id, siguiente, empresa, onReset, onWhatsApp }: { id: Id; sig
       return (<><UnaOpcion titulo="¿Te gustaría crecer dentro de la empresa donde trabajas?" opciones={D.CRECER_EMPRESA} valor={s.crecerEmpresa === null ? null : D.CRECER_EMPRESA.indexOf(s.crecerEmpresa)} onPick={(i) => set({ crecerEmpresa: D.CRECER_EMPRESA[i] ?? null })} /><Continuar disabled={s.crecerEmpresa === null} onClick={() => siguiente()} /></>);
     case "necesidad":
       return (<><UnaOpcion titulo="¿Qué es lo que más necesitas ahora?" opciones={D.NECESIDADES.map((n) => n.label)} valor={s.necesidad} onPick={(i) => set({ necesidad: i })} /><Continuar disabled={s.necesidad === null} onClick={() => siguiente()} /></>);
+    case "nivelEstudios":
+      return (<><UnaOpcion titulo="¿Cuál es el último nivel de estudios que terminaste?" opciones={NIVELES_ESTUDIOS} valor={s.nivelEstudios === null ? null : NIVELES_ESTUDIOS.indexOf(s.nivelEstudios)} onPick={(i) => set({ nivelEstudios: NIVELES_ESTUDIOS[i] ?? null, habilidades: null, ruta: null })} /><Continuar disabled={s.nivelEstudios === null} onClick={() => siguiente()} /></>);
+    case "estudiaActualmente":
+      return (<><UnaOpcion titulo="¿Estás estudiando actualmente?" opciones={ESTUDIA_ACTUALMENTE} valor={s.estudiaActualmente === null ? null : ESTUDIA_ACTUALMENTE.indexOf(s.estudiaActualmente)} onPick={(i) => set({ estudiaActualmente: ESTUDIA_ACTUALMENTE[i] ?? null, habilidades: null, ruta: null })} /><Continuar disabled={s.estudiaActualmente === null} onClick={() => siguiente()} /></>);
+    case "carrera":
+      return (<><Titulo>¿Cuál es tu carrera o qué estás estudiando?</Titulo><input aria-label="Carrera (opcional)" className="field" maxLength={200} placeholder="Psicología, Administración de empresas…" value={s.carrera} onChange={(e) => set({ carrera: e.target.value, habilidades: null, ruta: null })} /><Continuar onClick={() => siguiente()} /></>);
     case "marcha":
       return (
         <>
@@ -224,6 +234,10 @@ function Pantalla({ id, siguiente, empresa, onReset, onWhatsApp }: { id: Id; sig
               <input className="field" maxLength={160} value={s.proyecto} onChange={(e) => set({ proyecto: e.target.value })} placeholder="Ej.: Terminar mi técnico en enfermería" />
             </label>
           )}
+          <label className="mt-5 block">
+            <span className="mb-2 block font-semibold">¿Qué has hecho ya para avanzar hacia tus metas?</span>
+            <input aria-label="Avances hacia tus metas (opcional)" className="field" maxLength={500} value={s.avances} onChange={(e) => set({ avances: e.target.value, habilidades: null, ruta: null })} />
+          </label>
           <Continuar disabled={s.marcha === null} onClick={() => siguiente(s.marcha === 0 ? {} : { proyecto: "" })} />
         </>
       );
@@ -321,7 +335,7 @@ function Tareas({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
   const enviar = async () => {
     setCargando(true); setError(null);
     try {
-      const h = await traducir({ data: { tareas: llenas } });
+      const h = await traducir({ data: { tareas: llenas, ...contextoEstudios(s) } });
       siguiente({ habilidades: h, favoritas: [], frase: "" });
     } catch (e) { setError(e instanceof Error ? e.message : "Intenta de nuevo."); }
     finally { setCargando(false); }
@@ -434,6 +448,7 @@ export function contextoRuta(s: Estado, empresa: string | null) {
   const d = derivados(s);
   const m = s.finanzas ? { ...s.finanzas, ...D.calcularMargen(s.finanzas) } : null;
   return {
+    ...contextoEstudios(s),
     enlaceEmpresa: empresa !== null,
     crecerEmpresa: D.respuestaCrecerEmpresa(s.situacion, s.crecerEmpresa) ?? "",
     perfil: d.perfil, perfilNombre: D.PERFIL_NOMBRE[d.perfil], economico: d.economico,
@@ -507,6 +522,10 @@ function RutaVista({ ruta, fecha }: { ruta: NonNullable<Estado["ruta"]>; fecha: 
           </div>
           <p className="mt-3 text-sm"><span className="font-bold">Propósito:</span> {p.proposito}</p>
           <p className="mt-2 text-sm"><span className="font-bold">Acción:</span> {p.accion}</p>
+          <Collapsible className="mt-3">
+            <CollapsibleTrigger asChild><Button variant="quiet" size="sm" className="group -ml-2">Ver cómo hacerlo <ChevronDown className="transition-transform group-data-[state=open]:rotate-180" /></Button></CollapsibleTrigger>
+            <CollapsibleContent><ol className="mt-2 list-decimal space-y-2 pl-5 text-sm">{p.subpasos.map((subpaso, j) => <li key={j}>{subpaso}</li>)}</ol></CollapsibleContent>
+          </Collapsible>
         </section>
       ))}
       <p className="rounded-2xl bg-primary/20 p-4 font-extrabold">📅 Fecha para revisar tu ruta: {fecha}</p>
@@ -539,6 +558,7 @@ function Cierre({ empresa, onReset, onWhatsApp }: { empresa: string | null; onRe
       empresa, rango_edad: D.EDADES[s.edad ?? 0]!, situacion: D.SITUACIONES[s.situacion ?? 0]!,
       perfil: d.perfil, energia: d.energia, interes_1: d.t1, interes_2: d.t2, calificacion: n,
       ...datosCrecimiento(s.situacion, s.crecerEmpresa),
+      ...datosEstudios(s),
     });
     setGuardando(false);
     if (!error) set({ calificacion: n });

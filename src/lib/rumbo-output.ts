@@ -9,6 +9,7 @@ export const RutaSchema = z.object({
   area_nueva: z.object({ nombre: texto, que_se_hace: texto, por_que_encaja: texto, primer_paso: texto }),
   pasos: z.array(z.object({ titulo: texto, proposito: texto, accion: texto,
     tiempo: z.string(),
+    subpasos: z.array(texto).min(3).max(4),
   })).length(4),
   preguntas: z.array(texto).length(2),
 });
@@ -39,8 +40,8 @@ export const RutaJSONSchema = {
       required: ["nombre", "que_se_hace", "por_que_encaja", "primer_paso"],
       properties: { nombre: { type: "string" }, que_se_hace: { type: "string" }, por_que_encaja: { type: "string" }, primer_paso: { type: "string" } } },
     pasos: { type: "array", minItems: 4, maxItems: 4, items: {
-      type: "object", additionalProperties: false, required: ["titulo", "proposito", "accion", "tiempo"],
-      properties: { titulo: { type: "string" }, proposito: { type: "string" }, accion: { type: "string" }, tiempo: { type: "string" } },
+      type: "object", additionalProperties: false, required: ["titulo", "proposito", "accion", "tiempo", "subpasos"],
+      properties: { titulo: { type: "string" }, proposito: { type: "string" }, accion: { type: "string" }, tiempo: { type: "string" }, subpasos: { type: "array", minItems: 3, maxItems: 4, items: { type: "string" } } },
     } },
     preguntas: { type: "array", minItems: 2, maxItems: 2, items: { type: "string" } },
   },

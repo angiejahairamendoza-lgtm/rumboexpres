@@ -1,0 +1,3 @@
+ALTER TABLE public.resultados ADD COLUMN nivel_estudios text CHECK (nivel_estudios IN ('Diversificado', 'Técnico', 'Licenciatura', 'Maestría o más')), ADD COLUMN estudia_actualmente text CHECK (estudia_actualmente IN ('Sí', 'No estoy estudiando'));
+COMMENT ON COLUMN public.resultados.nivel_estudios IS 'Nivel de estudios anónimo; nullable para registros anteriores.';
+COMMENT ON COLUMN public.resultados.estudia_actualmente IS 'Respuesta anónima sobre estudios actuales; nullable para registros anteriores.';

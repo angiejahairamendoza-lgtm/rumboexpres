@@ -41,10 +41,12 @@ export type Database = {
           crecer_empresa: string | null
           empresa: string | null
           energia: string
+          estudia_actualmente: string | null
           fecha: string
           id: string
           interes_1: string
           interes_2: string
+          nivel_estudios: string | null
           perfil: string
           rango_edad: string
           situacion: string
@@ -54,10 +56,12 @@ export type Database = {
           crecer_empresa?: string | null
           empresa?: string | null
           energia: string
+          estudia_actualmente?: string | null
           fecha?: string
           id?: string
           interes_1: string
           interes_2: string
+          nivel_estudios?: string | null
           perfil: string
           rango_edad: string
           situacion: string
@@ -67,10 +71,12 @@ export type Database = {
           crecer_empresa?: string | null
           empresa?: string | null
           energia?: string
+          estudia_actualmente?: string | null
           fecha?: string
           id?: string
           interes_1?: string
           interes_2?: string
+          nivel_estudios?: string | null
           perfil?: string
           rango_edad?: string
           situacion?: string

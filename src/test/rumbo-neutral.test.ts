@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { contextoRuta } from "@/components/rumbo/Flow";
 import { estadoInicial } from "@/lib/rumbo-store";
 import { generarRuta, traducirHabilidades } from "@/lib/rumbo-ai.functions";
+import { contextoEstudios, datosEstudios } from "@/lib/rumbo-studies";
 
 const ai = vi.hoisted(() => ({ generate: vi.fn() }));
 vi.mock("@lovable.dev/ai-gateway", () => ({ generateResponse: ai.generate, GatewayError: class extends Error {} }));
@@ -14,7 +15,7 @@ vi.mock("@tanstack/react-start", () => ({
 
 const ruta = {
   area_nueva: { nombre: "Planificación de personal", que_se_hace: "Organizar turnos.", por_que_encaja: "Usas tu organización.", primer_paso: "Puedes leer sobre planificación." },
-  pasos: Array.from({ length: 4 }, () => ({ titulo: "Explorar", proposito: "Conocer opciones.", accion: "Puedes revisar una vacante.", tiempo: "5 min" })),
+  pasos: Array.from({ length: 4 }, () => ({ titulo: "Explorar", proposito: "Conocer opciones.", accion: "Puedes revisar una vacante.", tiempo: "5 min", subpasos: ["Puedes abrir el portal.", "Puedes leer una vacante.", "Puedes guardar su enlace."] })),
   preguntas: ["¿Qué necesitas para decidir?", "¿Qué te gustaría conocer?"],
 };
 beforeEach(() => {
@@ -56,14 +57,53 @@ describe("contexto neutral de crecimiento", () => {
   });
   it("el crecimiento respeta descanso inicial y contactos conocidos sin exposición en frío", async () => {
     await generarRuta({ data: { ...contexto("Sí"), energia: "baja" } });
-    expect(instrucciones()).toContain("la semana 1 con energía baja sigue siendo SOLO descanso y cuidado");
+    expect(instrucciones()).toContain("la semana 1 con energía baja se enfoca en recuperar energía y buscar enfoque y claridad");
     expect(instrucciones()).toContain("invitaciones opcionales con contactos conocidos y canales internos habituales");
   });
   it("el traductor solicita exactamente dos puestos internos no agentes y dos externos", async () => {
     ai.generate.mockResolvedValueOnce({ output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ habilidades: [1, 2, 3].map((n) => ({ habilidad: `Habilidad ${n}`, para_que: "Organizar información.", puestos: ["Analista de calidad", "Auxiliar de planificación", "Auxiliar administrativo", "Asistente de inventario"] })) }) }] }] });
-    const habilidades = await traducirHabilidades({ data: { tareas: ["Reviso reportes", "Resuelvo casos", "Capacito compañeros"] } });
+    const habilidades = await traducirHabilidades({ data: { tareas: ["Reviso reportes", "Resuelvo casos", "Capacito compañeros"], ...contextoEstudios(estadoInicial()) } });
     expect(habilidades.every((h) => h.puestos.length === 4)).toBe(true);
     expect(instrucciones()).toContain("2 dentro de la industria de contact center que no sean de agente");
     expect(instrucciones()).toContain("y 2 fuera de la industria");
+  });
+});
+
+describe("estudios, avances y profundidad", () => {
+  const persona = () => ({ ...estadoInicial(), nivelEstudios: "Licenciatura" as const, estudiaActualmente: "No estoy estudiando" as const, carrera: "Psicología", avances: "Ya tengo página web y redes sociales", proyecto: "Clínica propia", necesidad: 0, marcha: 0, anio: 0 });
+  it("envía los cuatro datos al contexto compartido y conserva solo categorías en el registro anónimo", () => {
+    expect(contextoRuta(persona(), null)).toMatchObject({ nivelEstudios: "Licenciatura", estudiaActualmente: "No estoy estudiando", carrera: "Psicología", avances: "Ya tengo página web y redes sociales" });
+    expect(datosEstudios(persona())).toEqual({ nivel_estudios: "Licenciatura", estudia_actualmente: "No estoy estudiando" });
+  });
+  it("el traductor recibe estudios, carrera y avances y excluye asistentes y auxiliares para grados universitarios", async () => {
+    ai.generate.mockResolvedValueOnce({ output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ habilidades: [1, 2, 3].map((n) => ({ habilidad: `Habilidad ${n}`, para_que: "Organizar información.", puestos: ["Analista de calidad", "Capacitador", "Psicóloga organizacional", "Coordinadora de formación"] })) }) }] }] });
+    await traducirHabilidades({ data: { tareas: ["Reviso reportes", "Resuelvo casos", "Capacito compañeros"], ...contextoEstudios(persona()) } });
+    expect(JSON.parse(String(ai.generate.mock.calls[0]?.[0]?.input[0]?.content).split("\n").slice(1).join("\n"))).toMatchObject(contextoEstudios(persona()));
+    expect(instrucciones()).toContain("Para Licenciatura o Maestría o más, nunca propongas puestos de asistente o auxiliar");
+  });
+  it("el área aplica la carrera y complementa el proyecto propio", async () => {
+    await generarRuta({ data: contextoRuta(persona(), null) });
+    expect(instrucciones()).toContain("el área nueva es una especialización o aplicación de esa carrera, no un cambio de profesión");
+    expect(instrucciones()).toContain("Si es Trampolín (perfil A) con proyecto propio, el área nueva complementa su proyecto");
+  });
+  it("parte de avances previos sin repetir acciones", async () => {
+    await generarRuta({ data: contextoRuta(persona(), null) });
+    expect(instrucciones()).toContain("nunca propongas pasos ni subpasos que repitan lo que la persona dice que ya hizo");
+    expect(instrucciones()).toContain("trabaja con lo que existe en vez de volver a crearlas");
+  });
+  it("cualquier cálculo ocupa como máximo dos frases incluyendo los subpasos", async () => {
+    await generarRuta({ data: contextoRuta(persona(), null) });
+    expect(instrucciones()).toContain("Cualquier cálculo se explica en 2 frases como máximo, contando la acción y los subpasos");
+  });
+  it("la primera semana de energía baja incluye pausas y reflexión sin dinero ni búsqueda", async () => {
+    await generarRuta({ data: { ...contextoRuta(persona(), null), energia: "baja" } });
+    expect(instrucciones()).toContain("pausas de descanso y a reflexionar sobre qué es importante para la persona y qué quiere lograr, sin dinero, cifras ni búsqueda de empleo");
+    expect(instrucciones()).not.toContain("SOLO descanso");
+  });
+  it("el tiempo cubre todos los subpasos y mantiene el primer paso de cinco minutos", async () => {
+    await generarRuta({ data: contextoRuta(persona(), null) });
+    expect(instrucciones()).toContain("El tiempo es el total de la acción CON todos sus subpasos");
+    expect(instrucciones()).toContain("de 5 minutos o menos en total");
+    expect(instrucciones()).toContain('Cada subpaso empieza con una invitación explícita como "Puedes…"');
   });
 });

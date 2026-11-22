@@ -129,7 +129,8 @@ export async function descargarPDF(d: DatosPDF) {
       const tl = lineas(`${tituloSemana(p.titulo)} (${p.tiempo})`, 11.5, A, true);
       const cl = lineas(`Propósito: ${p.proposito}`, 11, A);
       const ll = lineas(`Acción: ${p.accion}`, 11, A);
-      const h = sem.length * lh(9.5) + tl.length * lh(11.5) + (cl.length + ll.length) * lh(11) + 10;
+      const sl = p.subpasos.map((s, j) => lineas(`${j + 1}. ${s}`, 10.5, A - 3));
+      const h = sem.length * lh(9.5) + tl.length * lh(11.5) + (cl.length + ll.length) * lh(11) + sl.reduce((total, ls) => total + ls.length * lh(10.5) + 1.5, 0) + 10;
       asegurar(h);
       y += 3;
       doc.setFillColor(...NAVY); doc.circle(M + 4, y - 1.5, 4, "F");
@@ -139,6 +140,10 @@ export async function descargarPDF(d: DatosPDF) {
       escribir(tl, X, 11.5, true, NAVY);
       escribir(cl, X, 11);
       escribir(ll, X, 11);
+      sl.forEach((ls) => {
+        for (const l of ls) { asegurar(lh(10.5)); escribir([l], X + 3, 10.5); }
+        y += 1.5;
+      });
       y += 4;
     });
   }

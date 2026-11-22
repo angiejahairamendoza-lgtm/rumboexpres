@@ -35,3 +35,5 @@ use the editor.
 - Share validated AI output contracts through `rumbo-output.ts` across server functions, browser state and PDF; accompaniment focus is selected by a pure app rule, never AI.
 - Normalize route durations instead of rejecting otherwise valid outputs, and use the shared company-aware program label in both app and PDF to keep price visibility consistent.
 - Pass company-link context and the applicable growth answer through the shared route-input builder to keep AI guidance neutral without persisting additional personal data.
+- Share education context through rumbo-studies.ts; serialize only categorical education answers for anonymous ratings so career and prior progress stay private.
+- Require three or four substeps in the shared AI route contract; collapse them by default in both app route views and print them fully with page-aware layout in the PDF.

@@ -1,4 +1,7 @@
 # Ajustes solicitados
+- [x] Estudios y avances previos: preguntas, privacidad, contexto de IA y registro anónimo.
+- [x] Ruta con subpasos opcionales, PDF completo y nueva semana 1 de energía baja.
+- [x] Pruebas y ruta real de Psicología con clínica propia; mostrar resultado y limpiar datos.
 - [x] Orientación neutral, contexto de empresa y reparto de puestos internos/externos.
 - [x] Pruebas y dos rutas reales por enlace de empresa; mostrar resultados y borrar estado de prueba.
 - [x] Íconos, imagen Nunito y metadatos para compartir.

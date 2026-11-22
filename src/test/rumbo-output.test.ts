@@ -5,11 +5,18 @@ import { leerGuardado } from "@/lib/rumbo-store";
 
 const ruta = () => ({
   area_nueva: { nombre: "Gestión documental", que_se_hace: "Organizar archivos.", por_que_encaja: "Usas tu capacidad de organizar.", primer_paso: "Puedes revisar un archivo." },
-  pasos: Array.from({ length: 4 }, (_, i) => ({ titulo: `Explorar ${i + 1}`, proposito: "Conocer una opción.", accion: "Puedes anotar una idea en tu celular.", tiempo: i === 0 ? "5 min" : "20 min" })),
+  pasos: Array.from({ length: 4 }, (_, i) => ({ titulo: `Explorar ${i + 1}`, proposito: "Conocer una opción.", accion: "Puedes anotar una idea en tu celular.", tiempo: i === 0 ? "5 min" : "20 min", subpasos: ["Puedes abrir una nota.", "Puedes escribir tu idea.", "Puedes guardar la nota."] })),
   preguntas: ["¿Qué te detiene al elegir?", "¿Qué necesitarías para decidir?"],
 });
 
 describe("contratos de resultados", () => {
+  it("cada paso exige tres o cuatro subpasos completos", () => {
+    for (const n of [0, 2, 3, 4, 5]) {
+      const r = ruta();
+      r.pasos = r.pasos.map((p) => ({ ...p, subpasos: Array.from({ length: n }, () => "Puedes abrir una nota.") }));
+      expect(RutaSchema.safeParse(r).success).toBe(n === 3 || n === 4);
+    }
+  });
   it("cada habilidad requiere uso y exactamente cuatro puestos", () => {
     const habilidad = { habilidad: "Soporte técnico", para_que: "Resolver fallas en oficinas.", puestos: ["Soporte técnico", "Auxiliar de informática", "Asistente de sistemas", "Agente de soporte"] };
     expect(HabilidadSchema.safeParse(habilidad).success).toBe(true);
@@ -26,17 +33,17 @@ describe("contratos de resultados", () => {
   });
   it("los pasos duran como máximo 20 minutos", () => {
     expect(validarRuta(ruta(), "Media").pasos).toHaveLength(4);
-    const r = ruta(); r.pasos[1] = { titulo: "Explorar", proposito: "Conocer", accion: "Puedes anotar.", tiempo: "21 min" };
+    const r = ruta(); r.pasos[1] = { titulo: "Explorar", proposito: "Conocer", accion: "Puedes anotar.", tiempo: "21 min", subpasos: ["Puedes abrir una nota.", "Puedes escribir.", "Puedes guardar."] };
     expect(validarRuta(r, "Media").pasos[1]?.tiempo).toBe("20 min");
   });
   it("con Casi nada el máximo sigue siendo 15 minutos", () => {
     const r = ruta(); r.pasos = r.pasos.map((p, i) => ({ ...p, tiempo: i === 0 ? "5 min" : "15 min" }));
     expect(validarRuta(r, "Casi nada").pasos).toHaveLength(4);
-    r.pasos[1] = { titulo: "Explorar", proposito: "Conocer", accion: "Puedes anotar.", tiempo: "16 min" };
+    r.pasos[1] = { titulo: "Explorar", proposito: "Conocer", accion: "Puedes anotar.", tiempo: "16 min", subpasos: ["Puedes abrir una nota.", "Puedes escribir.", "Puedes guardar."] };
     expect(validarRuta(r, "Casi nada").pasos[1]?.tiempo).toBe("15 min");
   });
   it("el primer paso es muy fácil, de cinco minutos o menos", () => {
-    const r = ruta(); r.pasos[0] = { titulo: "Empezar", proposito: "Avanzar", accion: "Puedes anotar.", tiempo: "6 min" };
+    const r = ruta(); r.pasos[0] = { titulo: "Empezar", proposito: "Avanzar", accion: "Puedes anotar.", tiempo: "6 min", subpasos: ["Puedes abrir una nota.", "Puedes escribir.", "Puedes guardar."] };
     expect(validarRuta(r, "Mucha").pasos[0]?.tiempo).toBe("5 min");
   });
   it("acepta minutos y normaliza los tiempos sin fallar", () => {
@@ -68,6 +75,11 @@ describe("foco de acompañamiento elegido por la app", () => {
 });
 
 describe("avance existente", () => {
+  it("recalcula rutas sin subpasos sin perder estudios ni avances", () => {
+    const anterior = ruta();
+    const raw = JSON.stringify({ t: 0, s: { pantalla: "cierre", carrera: "Psicología", avances: "Ya tengo mi web", ruta: { ...anterior, pasos: anterior.pasos.map(({ subpasos: _subpasos, ...p }) => p) } } });
+    expect(leerGuardado(raw, 1)).toEqual({ pantalla: "ruta", carrera: "Psicología", avances: "Ya tengo mi web", ruta: null });
+  });
   it("preserva respuestas al recalcular una ruta con formato anterior", () => {
     const raw = JSON.stringify({ t: 0, s: { pantalla: "cierre", crecerEmpresa: "Sí", claridad: 7, frase: "Mi frase", ruta: [{ titulo: "Anterior", pasos: [] }] } });
     expect(leerGuardado(raw, 1)).toEqual({ pantalla: "ruta", crecerEmpresa: "Sí", claridad: 7, frase: "Mi frase", ruta: null });

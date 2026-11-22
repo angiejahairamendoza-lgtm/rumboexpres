@@ -12,9 +12,10 @@ vi.mock("@/lib/rumbo-pdf", () => ({ descargarPDF: mocks.pdf }));
 function abrir(pantalla: string, situacion = 0) {
   localStorage.setItem("rumbo-expres", JSON.stringify({ t: Date.now(), s: {
     ...estadoInicial(), pantalla, situacion, necesidad: 0, marcha: 0, anio: 0,
+    nivelEstudios: "Licenciatura", estudiaActualmente: "No estoy estudiando", carrera: "Psicología", avances: "Ya tengo web y redes sociales",
     valores: [0, 1, 2], frase: "Tengo experiencia en soporte técnico.", ruta: {
       area_nueva: { nombre: "Gestión documental", que_se_hace: "Ordenar documentos.", por_que_encaja: "Usas tu organización.", primer_paso: "Puedes revisar un archivo." },
-      pasos: Array.from({ length: 4 }, (_, i) => ({ titulo: `Paso ${i + 1}`, proposito: "Explorar.", accion: "Puedes anotar una idea.", tiempo: "5 min" })),
+      pasos: Array.from({ length: 4 }, (_, i) => ({ titulo: `Paso ${i + 1}`, proposito: "Explorar.", accion: "Puedes anotar una idea.", tiempo: "5 min", subpasos: ["Puedes abrir una nota.", "Puedes escribir una idea.", "Puedes guardar tu nota."] })),
       preguntas: ["¿Qué te detiene?", "¿Qué necesitas para decidir?"],
     },
   } }));
@@ -66,6 +67,17 @@ describe("reglas de los seis ajustes", () => {
 });
 
 describe("recorrido y confirmaciones", () => {
+  it("exige ambas respuestas de estudios y permite omitir carrera", async () => {
+    abrir("nivelEstudios");
+    fireEvent.click(await screen.findByRole("button", { name: "Diversificado" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Sí$/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Carrera (opcional)" }), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    const s = JSON.parse(localStorage.getItem("rumbo-expres") ?? "{}").s;
+    expect(s).toMatchObject({ nivelEstudios: "Diversificado", estudiaActualmente: "Sí", carrera: "", pantalla: "necesidad" });
+  });
   it("cancelar conserva el avance y confirmar lo borra", async () => {
     abrir("situacion");
     fireEvent.click(await screen.findByRole("button", { name: "Empezar de nuevo" }));
@@ -103,7 +115,7 @@ describe("recorrido y confirmaciones", () => {
     } else {
       expect(guardado().crecerEmpresa).toBeNull();
     }
-    expect(guardado().pantalla).toBe("necesidad");
+    expect(guardado().pantalla).toBe("nivelEstudios");
   });
 
   it("la calificación guarda crecimiento y el enlace cuenta un clic sin datos personales", async () => {
@@ -117,6 +129,7 @@ describe("recorrido y confirmaciones", () => {
     await waitFor(() => expect(mocks.insert).toHaveBeenCalledWith({
       empresa: "prueba", rango_edad: "18–24", situacion: "Trabajo en un call center", perfil: "A",
       energia: "suficiente", interes_1: "Práctico", interes_2: "Investigador", calificacion: 5, crecer_empresa: null,
+      nivel_estudios: "Licenciatura", estudia_actualmente: "No estoy estudiando",
     }));
   });
 });

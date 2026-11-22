@@ -9,6 +9,10 @@ export type Estado = {
   edad: number | null;
   situacion: number | null;
   crecerEmpresa: string | null;
+  nivelEstudios: "Diversificado" | "Técnico" | "Licenciatura" | "Maestría o más" | null;
+  estudiaActualmente: "Sí" | "No estoy estudiando" | null;
+  carrera: string;
+  avances: string;
   necesidad: number | null;
   marcha: number | null;
   proyecto: string;
@@ -30,6 +34,7 @@ export type Estado = {
 
 export const estadoInicial = (): Estado => ({
   pantalla: "bienvenida", who5: [null, null, null, null, null], jornada: null, edad: null, situacion: null, crecerEmpresa: null,
+  nivelEstudios: null, estudiaActualmente: null, carrera: "", avances: "",
   necesidad: null, marcha: null, proyecto: "", anio: null, claridad: 5, actividades: [], valores: [],
   condiciones: [], tareas: ["", "", ""], habilidades: null, favoritas: [], frase: "", finanzas: null,
   finanzasSaltado: false, ruta: null, rutaFecha: null, calificacion: null,
