@@ -7,7 +7,8 @@ export function contextoEstudios(s: Estado) {
   return {
     nivelEstudios: s.nivelEstudios ?? "",
     estudiaActualmente: s.estudiaActualmente ?? "",
-    carrera: s.carrera.trim(),
+    titulo: s.carrera.trim(),
+    estudiando: s.estudiaActualmente === "Sí" ? s.estudiando.trim() : "",
     avances: s.avances.trim(),
   };
 }

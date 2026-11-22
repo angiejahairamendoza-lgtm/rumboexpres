@@ -223,7 +223,7 @@ function Pantalla({ id, siguiente, empresa, onReset, onWhatsApp }: { id: Id | Es
     case "estudiaActualmente":
       return (<><UnaOpcion titulo="¿Estás estudiando actualmente?" opciones={ESTUDIA_ACTUALMENTE} valor={s.estudiaActualmente === null ? null : ESTUDIA_ACTUALMENTE.indexOf(s.estudiaActualmente)} onPick={(i) => set({ estudiaActualmente: ESTUDIA_ACTUALMENTE[i] ?? null, habilidades: null, ruta: null })} /><Continuar disabled={s.estudiaActualmente === null} onClick={() => siguiente()} /></>);
     case "carrera":
-      return (<><Titulo>¿Cuál es tu carrera o qué estás estudiando?</Titulo><input aria-label="Carrera (opcional)" className="field" maxLength={200} placeholder="Psicología, Administración de empresas…" value={s.carrera} onChange={(e) => set({ carrera: e.target.value, habilidades: null, ruta: null })} /><Continuar onClick={() => siguiente()} /></>);
+      return (<><Titulo>¿Qué carrera o título tienes?</Titulo><input aria-label="Carrera o título (opcional)" className="field" maxLength={200} placeholder="Chef, Psicología, Perito contador…" value={s.carrera} onChange={(e) => set({ carrera: e.target.value, habilidades: null, ruta: null })} />{s.estudiaActualmente === "Sí" && (<><h2 className="mt-6 text-lg font-bold text-primary">¿Qué estás estudiando?</h2><input aria-label="Qué estás estudiando (opcional)" className="field" maxLength={200} placeholder="Posgrado en emprendimiento…" value={s.estudiando} onChange={(e) => set({ estudiando: e.target.value, habilidades: null, ruta: null })} /></>)}<Continuar onClick={() => siguiente()} /></>);
     case "marcha":
       return (
         <>
@@ -335,7 +335,7 @@ function Tareas({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
   const enviar = async () => {
     setCargando(true); setError(null);
     try {
-      const h = await traducir({ data: { tareas: llenas, ...contextoEstudios(s) } });
+      const h = await traducir({ data: { tareas: llenas, situacion: D.SITUACIONES[s.situacion ?? 0] ?? "", ...contextoEstudios(s) } });
       siguiente({ habilidades: h, favoritas: [], frase: "" });
     } catch (e) { setError(e instanceof Error ? e.message : "Intenta de nuevo."); }
     finally { setCargando(false); }

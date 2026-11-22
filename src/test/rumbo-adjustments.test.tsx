@@ -73,7 +73,7 @@ describe("recorrido y confirmaciones", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
     fireEvent.click(screen.getByRole("button", { name: /^Sí$/ }));
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Carrera (opcional)" }), { target: { value: "" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Carrera o título (opcional)" }), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
     const s = JSON.parse(localStorage.getItem("rumbo-expres") ?? "{}").s;
     expect(s).toMatchObject({ nivelEstudios: "Diversificado", estudiaActualmente: "Sí", carrera: "", pantalla: "necesidad" });

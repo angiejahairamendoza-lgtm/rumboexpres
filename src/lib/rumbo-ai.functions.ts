@@ -32,11 +32,11 @@ const str = (max: number) => z.string().trim().max(max);
 const EstudiosInput = z.object({
   nivelEstudios: z.enum([...NIVELES_ESTUDIOS, ""]),
   estudiaActualmente: z.enum([...ESTUDIA_ACTUALMENTE, ""]),
-  carrera: str(200), avances: str(500),
+  titulo: str(200), estudiando: str(200), avances: str(500),
 });
 
 export const traducirHabilidades = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => EstudiosInput.extend({ tareas: z.array(str(200).min(2)).min(3).max(5) }).parse(d))
+  .inputValidator((d: unknown) => EstudiosInput.extend({ situacion: str(120), tareas: z.array(str(200).min(2)).min(3).max(5) }).parse(d))
   .handler(async ({ data }) => {
     const sistema = `Eres orientadora vocacional en Guatemala (Programa RUMBO). Traduces tareas de call center al lenguaje del mercado laboral.
 Por cada tarea devuelve:
@@ -44,8 +44,8 @@ Por cada tarea devuelve:
 - para_que: una sola línea que explique para qué sirve la habilidad y dónde se usa.
 - habilidad: usa el nombre completo, como se nombra en el mercado laboral real, sin acortarlo.
 - Cada habilidad debe ser distinta. Si dos tareas se parecen, identifica una faceta diferente de la experiencia y dale un nombre distinto, sin repetir habilidades.
-- puestos: exactamente 4 puestos donde se usa: 2 dentro de la industria de contact center que no sean de agente (por ejemplo, calidad, capacitación, planificación de personal, back office, soporte de segundo nivel o supervisión) y 2 fuera de la industria (empresas, comercios, salud, educación, oficinas, etc.). Puestos reales y alcanzables en Guatemala con su experiencia.
-- Los puestos deben corresponder a su nivel de estudios y aprovechar su carrera terminada o en curso si la tiene. Para Licenciatura o Maestría o más, nunca propongas puestos de asistente o auxiliar; propone roles profesionales alcanzables con sus estudios y experiencia, sin atribuir credenciales adicionales que no indicó.
+- puestos: exactamente 4 puestos reales y alcanzables en Guatemala con su experiencia. Si situacion="Trabajo en un call center": 2 dentro de la industria de contact center que no sean de agente (por ejemplo, calidad, capacitación, planificación de personal, back office, soporte de segundo nivel o supervisión) y 2 fuera de la industria (empresas, comercios, salud, educación, oficinas, etc.). Si ya dejó el call center (cualquier otra situacion), los 4 puestos son de su campo, su título, lo que estudia o su proyecto, sin ningún puesto de contact center.
+- Los puestos deben corresponder a su nivel de estudios y aprovechar su título (titulo) y lo que estudia actualmente (estudiando) si los tiene. Para Licenciatura o Maestría o más, nunca propongas puestos de asistente o auxiliar; propone roles profesionales alcanzables con sus estudios y experiencia, sin atribuir credenciales adicionales que no indicó.
 - Toma en cuenta lo que ya hizo (avances) al reconocer su experiencia. Parte de esos logros, sin proponer repetirlos.
 Español neutro de Guatemala. Sin lenguaje clínico. Devuelve las habilidades en el mismo orden que las tareas recibidas, una por tarea.`;
     const out = await pedirJSON<{ habilidades: Habilidad[] }>(
@@ -89,8 +89,8 @@ Formato: devuelve tres partes:
 - preguntas: exactamente 2 preguntas abiertas y personalizadas, en segunda persona, de 20 palabras o menos cada una, sobre un solo tema. Tono cálido, sobre lo que te detiene o necesitarías para decidir con acompañamiento; sin alarmar, lenguaje clínico ni dar la respuesta. No repitas sus cifras de dinero ni menciones su nivel de energía.
 
 Reglas obligatorias:
-- Estudios: ajusta las opciones a nivelEstudios, estudiaActualmente y carrera. Para Licenciatura o Maestría o más, nunca propongas puestos de asistente o auxiliar.
-- Si tiene carrera terminada o en curso, el área nueva es una especialización o aplicación de esa carrera, no un cambio de profesión. Si es Trampolín (perfil A) con proyecto propio, el área nueva complementa su proyecto; si además tiene carrera, debe ser una aplicación o especialización de esa carrera que complemente el proyecto. Esta regla tiene prioridad sobre explorar una profesión distinta y se combina con la orientación interna cuando corresponde.
+- Estudios: ajusta las opciones a nivelEstudios, estudiaActualmente, titulo (carrera o título que tiene) y estudiando (lo que estudia hoy). Para Licenciatura o Maestría o más, nunca propongas puestos de asistente o auxiliar.
+- Si tiene título o estudia algo (titulo o estudiando), el área nueva es una especialización o aplicación de esa carrera, no un cambio de profesión; si tiene ambos, considera los dos y busca un área que los combine. Si es Trampolín (perfil A) con proyecto propio, el área nueva complementa su proyecto; si además tiene título o estudios en curso, debe ser una aplicación o especialización de esa carrera que complemente el proyecto. Esta regla tiene prioridad sobre explorar una profesión distinta y se combina con la orientación interna cuando corresponde.
 - Avances: nunca propongas pasos ni subpasos que repitan lo que la persona dice que ya hizo. Parte de ahí y propón el siguiente nivel; si ya tiene página web y redes sociales, trabaja con lo que existe en vez de volver a crearlas.
 - Cada subpaso empieza con una invitación explícita como "Puedes…", "Te propongo…" o "Si quieres, puedes…"; usa el infinitivo después de "Puedes". Evita imperativos sueltos como "Abre", "Anota", "Busca" o "Escribe".
 - Neutralidad: crecer dentro y crecer fuera son igual de válidos. Nunca uses expresiones como "salir del call center" ni presentes quedarse como algo negativo. enlaceEmpresa indica únicamente que llegó por un enlace de empresa; no significa que deba quedarse, ni sustituye su respuesta.

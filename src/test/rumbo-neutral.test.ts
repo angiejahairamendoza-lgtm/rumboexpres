@@ -62,7 +62,7 @@ describe("contexto neutral de crecimiento", () => {
   });
   it("el traductor solicita exactamente dos puestos internos no agentes y dos externos", async () => {
     ai.generate.mockResolvedValueOnce({ output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ habilidades: [1, 2, 3].map((n) => ({ habilidad: `Habilidad ${n}`, para_que: "Organizar información.", puestos: ["Analista de calidad", "Auxiliar de planificación", "Auxiliar administrativo", "Asistente de inventario"] })) }) }] }] });
-    const habilidades = await traducirHabilidades({ data: { tareas: ["Reviso reportes", "Resuelvo casos", "Capacito compañeros"], ...contextoEstudios(estadoInicial()) } });
+    const habilidades = await traducirHabilidades({ data: { tareas: ["Reviso reportes", "Resuelvo casos", "Capacito compañeros"], situacion: "Trabajo en un call center", ...contextoEstudios(estadoInicial()) } });
     expect(habilidades.every((h) => h.puestos.length === 4)).toBe(true);
     expect(instrucciones()).toContain("2 dentro de la industria de contact center que no sean de agente");
     expect(instrucciones()).toContain("y 2 fuera de la industria");
@@ -72,12 +72,12 @@ describe("contexto neutral de crecimiento", () => {
 describe("estudios, avances y profundidad", () => {
   const persona = () => ({ ...estadoInicial(), nivelEstudios: "Licenciatura" as const, estudiaActualmente: "No estoy estudiando" as const, carrera: "Psicología", avances: "Ya tengo página web y redes sociales", proyecto: "Clínica propia", necesidad: 0, marcha: 0, anio: 0 });
   it("envía los cuatro datos al contexto compartido y conserva solo categorías en el registro anónimo", () => {
-    expect(contextoRuta(persona(), null)).toMatchObject({ nivelEstudios: "Licenciatura", estudiaActualmente: "No estoy estudiando", carrera: "Psicología", avances: "Ya tengo página web y redes sociales" });
+    expect(contextoRuta(persona(), null)).toMatchObject({ nivelEstudios: "Licenciatura", estudiaActualmente: "No estoy estudiando", titulo: "Psicología", estudiando: "", avances: "Ya tengo página web y redes sociales" });
     expect(datosEstudios(persona())).toEqual({ nivel_estudios: "Licenciatura", estudia_actualmente: "No estoy estudiando" });
   });
   it("el traductor recibe estudios, carrera y avances y excluye asistentes y auxiliares para grados universitarios", async () => {
     ai.generate.mockResolvedValueOnce({ output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ habilidades: [1, 2, 3].map((n) => ({ habilidad: `Habilidad ${n}`, para_que: "Organizar información.", puestos: ["Analista de calidad", "Capacitador", "Psicóloga organizacional", "Coordinadora de formación"] })) }) }] }] });
-    await traducirHabilidades({ data: { tareas: ["Reviso reportes", "Resuelvo casos", "Capacito compañeros"], ...contextoEstudios(persona()) } });
+    await traducirHabilidades({ data: { tareas: ["Reviso reportes", "Resuelvo casos", "Capacito compañeros"], situacion: "Trabajo en un call center", ...contextoEstudios(persona()) } });
     expect(JSON.parse(String(ai.generate.mock.calls[0]?.[0]?.input[0]?.content).split("\n").slice(1).join("\n"))).toMatchObject(contextoEstudios(persona()));
     expect(instrucciones()).toContain("Para Licenciatura o Maestría o más, nunca propongas puestos de asistente o auxiliar");
   });
@@ -105,5 +105,20 @@ describe("estudios, avances y profundidad", () => {
     expect(instrucciones()).toContain("El tiempo es el total de la acción CON todos sus subpasos");
     expect(instrucciones()).toContain("de 5 minutos o menos en total");
     expect(instrucciones()).toContain('Cada subpaso empieza con una invitación explícita como "Puedes…"');
+  });
+});
+
+describe("puestos según situación y estudios separados", () => {
+  it("envía título y lo que estudia por separado solo si estudia", () => {
+    const base = { ...estadoInicial(), carrera: "Chef", estudiando: "Posgrado en emprendimiento" };
+    expect(contextoEstudios({ ...base, estudiaActualmente: "Sí" })).toMatchObject({ titulo: "Chef", estudiando: "Posgrado en emprendimiento" });
+    expect(contextoEstudios({ ...base, estudiaActualmente: "No estoy estudiando" })).toMatchObject({ titulo: "Chef", estudiando: "" });
+  });
+  it("la regla 2 dentro y 2 fuera aplica solo a quien trabaja en call center", async () => {
+    ai.generate.mockResolvedValueOnce({ output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ habilidades: [1, 2, 3].map((n) => ({ habilidad: `H ${n}`, para_que: "x.", puestos: ["a", "b", "c", "d"] })) }) }] }] });
+    await traducirHabilidades({ data: { tareas: ["Reviso reportes", "Resuelvo casos", "Capacito compañeros"], situacion: "Dejé el call center y tengo otro empleo", ...contextoEstudios(estadoInicial()) } });
+    expect(String(ai.generate.mock.calls.at(-1)?.[0]?.input[0]?.content)).toContain("Dejé el call center y tengo otro empleo");
+    expect(instrucciones()).toContain('Si situacion="Trabajo en un call center": 2 dentro de la industria');
+    expect(instrucciones()).toContain("sin ningún puesto de contact center");
   });
 });
