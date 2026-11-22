@@ -32,3 +32,4 @@ use the editor.
 - RUMBO flow state lives only in browser localStorage with a 24h expiry; persist only anonymous rating rows in `resultados` and click rows in `clics_whatsapp` to keep personal flow data private.
 - Keep anonymous WhatsApp writes and conditional growth-answer serialization in `src/lib/rumbo-results.ts` so every app link uses the same narrow data contract.
 - AI calls go through server functions in src/lib/rumbo-ai.functions.ts using strict json_schema output; scoring rules (energy, profile, interests, margin) are pure functions in src/lib/rumbo-data.ts covered by src/test/rumbo-rules.test.ts.
+- Share validated AI output contracts through `rumbo-output.ts` across server functions, browser state and PDF; accompaniment focus is selected by a pure app rule, never AI.

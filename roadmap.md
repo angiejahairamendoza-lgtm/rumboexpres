@@ -1,4 +1,8 @@
 # Ajustes solicitados
+- [x] Habilidades con para_que y cuatro puestos, sin frase de CV.
+- [x] Área nueva, cuatro pasos y dos preguntas en la salida y pantalla.
+- [x] Acompañamiento con foco elegido por la app y claridad.
+- [x] PDF, compatibilidad del avance, pruebas y verificación.
 - [x] Confirmación antes de reiniciar, con descarga en el cierre.
 - [x] WhatsApp con mensaje y número internacional en PDF.
 - [x] Fuentes debajo de las secciones y del resultado/PDF.

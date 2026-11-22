@@ -372,7 +372,7 @@ function Habilidades({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }
             <article key={i} className={`rounded-2xl border-2 p-4 ${on ? "border-primary bg-field" : "border-border"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground">“{h.tarea}”</p>
+                  <p className="text-xs font-semibold text-muted-foreground">“{s.tareas[i]}”</p>
                   <h2 className="mt-1 text-lg font-extrabold leading-snug">{h.habilidad}</h2>
                 </div>
                 <button type="button" aria-label={on ? "Quitar estrella" : "Marcar como favorita"} aria-pressed={on}
@@ -381,7 +381,7 @@ function Habilidades({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }
                   <Star className={`size-6 ${on ? "fill-star text-star" : "text-muted-foreground"}`} />
                 </button>
               </div>
-              <p className="mt-2 text-sm"><span className="font-bold">Para tu CV:</span> {h.frase_cv}</p>
+              <p className="mt-2 text-sm">{h.para_que}</p>
               <p className="mt-2 text-sm text-muted-foreground"><span className="font-bold">Puestos:</span> {h.puestos.join(" · ")}</p>
             </article>
           );
@@ -440,7 +440,7 @@ function contextoRuta(s: Estado) {
     energia: d.energia, energiaJornada: D.ENERGIA_JORNADA[s.jornada ?? 1] ?? "", claridad: s.claridad,
     intereses: [d.t1, d.t2], interesTexto: d.interes,
     valores: s.valores.map((i) => D.VALORES[i]!), condiciones: s.condiciones.map((i) => D.CONDICIONES[i]!),
-    favoritas: s.favoritas.map((i) => s.habilidades?.[i]?.habilidad ?? "").filter(Boolean), frase: s.frase,
+    favoritas: (s.favoritas.length ? s.favoritas : (s.habilidades ?? []).slice(0, 3).map((_, i) => i)).map((i) => s.habilidades?.[i]?.habilidad ?? "").filter(Boolean), frase: s.frase,
     margen: m,
   };
 }
@@ -489,23 +489,22 @@ function Ruta({ siguiente }: { siguiente: (p?: Partial<Estado>) => void }) {
 function RutaVista({ ruta, fecha }: { ruta: NonNullable<Estado["ruta"]>; fecha: string }) {
   return (
     <div className="space-y-5">
-      {ruta.map((sem, i) => (
+      <section className="rounded-2xl border-2 border-border p-4">
+        <h2 className="text-xl font-extrabold">Un área que quizá no conocías</h2>
+        <h3 className="mt-3 text-lg font-extrabold">{ruta.area_nueva.nombre}</h3>
+        <p className="mt-2">{ruta.area_nueva.que_se_hace}</p>
+        <p className="mt-2">{ruta.area_nueva.por_que_encaja}</p>
+        <p className="mt-2"><span className="font-bold">Primer paso:</span> {ruta.area_nueva.primer_paso}</p>
+      </section>
+      {ruta.pasos.map((p, i) => (
         <section key={i} className="rounded-2xl border-2 border-border p-4">
           <p className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">Semana {i + 1}</p>
-          <h2 className="text-lg font-extrabold leading-snug">{D.tituloSemana(sem.titulo)}</h2>
-          <div className="mt-3 space-y-3">
-            {sem.pasos.map((p, j) => (
-              <div key={j} className="rounded-xl bg-field p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-extrabold">{p.titulo}</h3>
-                  <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-xs font-bold">{p.tiempo}</span>
-                </div>
-                <p className="mt-2 text-sm font-bold">Cómo hacerlo</p>
-                <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{p.como.map((c, k) => <li key={k}>{c}</li>)}</ul>
-                <p className="mt-2 text-sm"><span className="font-bold">✅ Listo cuando:</span> {p.listo}</p>
-              </div>
-            ))}
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="text-lg font-extrabold leading-snug">{D.tituloSemana(p.titulo)}</h2>
+            <span className="shrink-0 rounded-full bg-field px-2 py-0.5 text-xs font-bold">{p.tiempo}</span>
           </div>
+          <p className="mt-3 text-sm"><span className="font-bold">Propósito:</span> {p.proposito}</p>
+          <p className="mt-2 text-sm"><span className="font-bold">Acción:</span> {p.accion}</p>
         </section>
       ))}
       <p className="rounded-2xl bg-primary/20 p-4 font-extrabold">📅 Fecha para revisar tu ruta: {fecha}</p>
@@ -520,7 +519,7 @@ async function descargarResumen(s: Estado) {
     perfilNombre: D.PERFIL_NOMBRE[d.perfil], perfilTexto: D.perfilTexto(d.perfil, d.economico), frase: s.frase,
     interes: d.interes, valores: s.valores.flatMap((i) => D.VALORES[i] ? [D.VALORES[i]] : []), condiciones: s.condiciones.flatMap((i) => D.CONDICIONES[i] ? [D.CONDICIONES[i]] : []),
     habilidades: s.habilidades ?? [], favoritas: s.favoritas, margen: s.finanzas ? D.margenTexto(s.finanzas) : null,
-    ruta: s.ruta ?? [], fechaRevision: s.rutaFecha ?? D.fechaRevision(),
+    ruta: s.ruta, foco: D.focoAcompanamiento(d.energia, d.perfil), claridad: s.claridad, fechaRevision: s.rutaFecha ?? D.fechaRevision(),
   });
 }
 
@@ -560,7 +559,7 @@ function Cierre({ empresa, onReset, onWhatsApp }: { empresa: string | null; onRe
         <Bloque t="Habilidades traducidas">
           <ul className="space-y-2">
             {(s.habilidades ?? []).map((h, i) => (
-              <li key={i}><span className="font-bold">{s.favoritas.includes(i) && "★ "}{h.habilidad}</span><br /><span className="text-sm text-muted-foreground">{h.frase_cv}</span></li>
+              <li key={i}><span className="font-bold">{s.favoritas.includes(i) && "★ "}{h.habilidad}</span><br /><span className="text-sm text-muted-foreground">{h.para_que}</span><p className="mt-1 text-sm text-muted-foreground">Puestos: {h.puestos.join(" · ")}</p></li>
             ))}
           </ul>
         </Bloque>
@@ -579,6 +578,14 @@ function Cierre({ empresa, onReset, onWhatsApp }: { empresa: string | null; onRe
       </section>
 
       <div className="mt-6"><Button variant="soft" size="xl" onClick={bajar} disabled={pdf}>{pdf ? <Loader2 className="animate-spin" /> : <Download />} Descargar mi ruta (PDF)</Button></div>
+
+      <section className="mt-8 rounded-3xl border-2 border-primary bg-field p-6">
+        <h2 className="text-xl font-extrabold">Lo que puedes trabajar con acompañamiento</h2>
+        <p className="mt-3 leading-relaxed">{D.focoAcompanamiento(d.energia, d.perfil)}</p>
+        <ul className="mt-4 list-disc space-y-3 pl-5">{s.ruta?.preguntas.map((pregunta, i) => <li key={i}>{pregunta}</li>)}</ul>
+        <p className="mt-4 leading-relaxed">Hoy marcaste tu claridad en {s.claridad} de 10. En el Programa RUMBO trabajamos juntos para que tengas más claridad sobre tus metas y decisiones.</p>
+        <Button variant="hero" size="xl" className="mt-5" asChild><a href={D.WHATSAPP} onClick={onWhatsApp} target="_blank" rel="noreferrer"><MessageCircle /> Escribir por WhatsApp</a></Button>
+      </section>
 
       <div className="mt-8 rounded-2xl bg-field p-5 text-center">
         <p className="font-extrabold">¿Te fue útil?</p>

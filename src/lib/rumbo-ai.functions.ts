@@ -1,9 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-export type Habilidad = { tarea: string; habilidad: string; frase_cv: string; puestos: string[] };
-export type PasoRuta = { titulo: string; como: string[]; listo: string; tiempo: string };
-export type Semana = { titulo: string; pasos: PasoRuta[] };
+import { HabilidadSchema, validarRuta, HabilidadesJSONSchema, RutaJSONSchema, type Habilidad, type RutaResultado } from "./rumbo-output";
+export type { Habilidad, RutaResultado } from "./rumbo-output";
 
 async function pedirJSON<T>(sistema: string, usuario: string, nombre: string, schema: Record<string, unknown>): Promise<T> {
   const { generateResponse, GatewayError } = await import("@lovable.dev/ai-gateway");
@@ -36,31 +35,17 @@ export const traducirHabilidades = createServerFn({ method: "POST" })
     const sistema = `Eres orientadora vocacional en Guatemala (Programa RUMBO). Traduces tareas de call center al lenguaje del mercado laboral.
 Por cada tarea devuelve:
 - habilidad: nombre de la habilidad en lenguaje del mercado, en español; puede incluir entre paréntesis el término en inglés si es el usual (ej. "Coordinación de servicios de salud y acompañamiento al paciente (patient advocate)").
-- frase_cv: frase para el CV en primera persona, concreta, sin exagerar ni inventar cifras.
+- para_que: una sola línea que explique para qué sirve la habilidad y dónde se usa.
 - habilidad: usa el nombre completo, como se nombra en el mercado laboral real, sin acortarlo.
-- puestos: exactamente 3 puestos donde se usa; al menos 2 fuera de un call center (empresas, comercios, salud, educación, oficinas, etc.). Puestos reales y alcanzables en Guatemala con su experiencia.
-Español neutro de Guatemala. Sin lenguaje clínico. Mantén el campo tarea igual al texto recibido.`;
+- puestos: exactamente 4 puestos donde se usa; al menos 2 fuera de un call center (empresas, comercios, salud, educación, oficinas, etc.). Puestos reales y alcanzables en Guatemala con su experiencia.
+Español neutro de Guatemala. Sin lenguaje clínico. Devuelve las habilidades en el mismo orden que las tareas recibidas, una por tarea.`;
     const out = await pedirJSON<{ habilidades: Habilidad[] }>(
       sistema,
       `Tareas:\n${data.tareas.map((t, i) => `${i + 1}. ${t}`).join("\n")}`,
       "habilidades",
-      {
-        type: "object", additionalProperties: false, required: ["habilidades"],
-        properties: {
-          habilidades: {
-            type: "array",
-            items: {
-              type: "object", additionalProperties: false, required: ["tarea", "habilidad", "frase_cv", "puestos"],
-              properties: {
-                tarea: { type: "string" }, habilidad: { type: "string" }, frase_cv: { type: "string" },
-                puestos: { type: "array", items: { type: "string" } },
-              },
-            },
-          },
-        },
-      },
+      HabilidadesJSONSchema,
     );
-    return out.habilidades;
+    return z.array(HabilidadSchema).length(data.tareas.length).parse(out.habilidades);
   });
 
 const RutaInput = z.object({
@@ -78,8 +63,8 @@ const RutaInput = z.object({
   interesTexto: str(500),
   valores: z.array(str(60)).max(3),
   condiciones: z.array(str(60)).max(2),
-  favoritas: z.array(str(200)).max(3),
-  frase: str(300),
+  favoritas: z.array(z.string().trim()).max(3),
+  frase: z.string().trim(),
   margen: z.object({ ingreso: z.number(), gastos: z.number(), ahorros: z.number(), margen: z.number(), meses: z.number() }).nullable(),
 });
 
@@ -87,7 +72,11 @@ export const generarRuta = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => RutaInput.parse(d))
   .handler(async ({ data }) => {
     const sistema = `Eres la voz del Programa RUMBO (Licda. Angie Mendoza, psicóloga clínica y orientadora vocacional, Guatemala). Generas una ruta de próximos pasos para el próximo mes (nunca la llames "ruta de 30 días" ni "plan de 30 días") para una persona que trabaja o trabajó en call center.
-Formato: exactamente 4 semanas; cada semana con título y 1 o 2 pasos. El título de cada semana describe el foco y empieza directamente con él, nunca con la palabra "Semana" ni con un número. Cada paso: titulo; como (2 a 4 instrucciones concretas); listo (señal clara de que está listo, sin el prefijo "Listo cuando"); tiempo (30 min o menos, ej. "20 min").
+Formato: devuelve tres partes:
+- area_nueva: un área de trabajo poco conocida para alguien de call center, real y alcanzable en Guatemala, que encaje con interesTexto, valores y habilidades favoritas. Elige un área distinta de TODAS las áreas ya mencionadas en interesTexto, no una variante o sinónimo. Campos: nombre; que_se_hace (una frase); por_que_encaja (una frase que conecte explícitamente con intereses o habilidades); primer_paso (una frase con acción concreta de baja exposición).
+- pasos: exactamente 4, uno por semana. Cada paso tiene titulo (foco, sin prefijo Semana ni número), proposito (una línea), accion (una sola instrucción concreta), tiempo (20 min o menos, formato "10 min"). El primer paso es muy fácil, de 5 minutos o menos, incluso cuando hay margen negativo o energía baja.
+- preguntas: exactamente 2 preguntas abiertas y personalizadas, en segunda persona, sobre lo que te detiene o lo que necesitarías para decidir y que podrías trabajar con acompañamiento. Invitan a reflexionar sin alarmar, sin lenguaje clínico ni dar la respuesta. Usa los datos de la persona; no preguntas genéricas.
+
 Reglas obligatorias:
 - Concreto: cada paso dice qué hacer, con qué y dónde. Mal: "Lleva un registro". Bien: "Lleva un registro semanal de tus sesiones e ingresos: por cada sesión anota fecha, iniciales del cliente, si ya pagó y el monto; cada viernes suma sesiones e ingresos."
 - Baja exposición: nada de escribir a desconocidos ni pedir favores en frío. Prefiere preguntas abiertas en grupos de Facebook de su área, cálculos, revisión de ofertas, ajustes al CV, materiales propios.
@@ -105,29 +94,6 @@ Reglas obligatorias:
       { ...data, margen_negativo: data.margen ? data.margen.margen < 0 : null },
       null, 2,
     )}`;
-    const out = await pedirJSON<{ semanas: Semana[] }>(sistema, usuario, "ruta_30_dias", {
-      type: "object", additionalProperties: false, required: ["semanas"],
-      properties: {
-        semanas: {
-          type: "array",
-          items: {
-            type: "object", additionalProperties: false, required: ["titulo", "pasos"],
-            properties: {
-              titulo: { type: "string" },
-              pasos: {
-                type: "array",
-                items: {
-                  type: "object", additionalProperties: false, required: ["titulo", "como", "listo", "tiempo"],
-                  properties: {
-                    titulo: { type: "string" }, como: { type: "array", items: { type: "string" } },
-                    listo: { type: "string" }, tiempo: { type: "string" },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-    return out.semanas;
+    const out = await pedirJSON<RutaResultado>(sistema, usuario, "ruta_proximos_pasos", RutaJSONSchema);
+    return validarRuta(out, data.energiaJornada);
   });

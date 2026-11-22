@@ -25,6 +25,15 @@ export const SITUACIONES = [
 ];
 
 export type Perfil = "A" | "B" | "C";
+export function seleccionarFoco(energia: "baja" | "suficiente", perfil: Perfil): "energia" | "decision" | "plan" {
+  return energia === "baja" ? "energia" : perfil === "C" ? "decision" : "plan";
+}
+export function focoAcompanamiento(energia: "baja" | "suficiente", perfil: Perfil) {
+  const foco = seleccionarFoco(energia, perfil);
+  if (foco === "energia") return "En tu caso, el acompañamiento empezaría por recuperar tu energía, para que puedas decidir con claridad y no desde el impulso.";
+  if (foco === "decision") return "En tu caso, el acompañamiento pondría el foco en tomar decisiones que sí te acerquen a tus metas personales.";
+  return "En tu caso, el acompañamiento pondría el foco en convertir tus metas en un plan concreto con fechas y en prepararte para enfrentar desafíos y aprovechar oportunidades.";
+}
 
 export const NECESIDADES: { label: string; perfil: Perfil; economico?: boolean }[] = [
   { label: "Avanzar hacia una meta que ya tengo", perfil: "A" },

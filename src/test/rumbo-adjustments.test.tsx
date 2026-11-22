@@ -12,7 +12,11 @@ vi.mock("@/lib/rumbo-pdf", () => ({ descargarPDF: mocks.pdf }));
 function abrir(pantalla: string, situacion = 0) {
   localStorage.setItem("rumbo-expres", JSON.stringify({ t: Date.now(), s: {
     ...estadoInicial(), pantalla, situacion, necesidad: 0, marcha: 0, anio: 0,
-    valores: [0, 1, 2], frase: "Tengo experiencia en soporte técnico.", ruta: [],
+    valores: [0, 1, 2], frase: "Tengo experiencia en soporte técnico.", ruta: {
+      area_nueva: { nombre: "Gestión documental", que_se_hace: "Ordenar documentos.", por_que_encaja: "Usas tu organización.", primer_paso: "Puedes revisar un archivo." },
+      pasos: Array.from({ length: 4 }, (_, i) => ({ titulo: `Paso ${i + 1}`, proposito: "Explorar.", accion: "Puedes anotar una idea.", tiempo: "5 min" })),
+      preguntas: ["¿Qué te detiene?", "¿Qué necesitas para decidir?"],
+    },
   } }));
   render(<RumboProvider><Flow empresa="prueba" /></RumboProvider>);
 }
@@ -104,7 +108,9 @@ describe("recorrido y confirmaciones", () => {
 
   it("la calificación guarda crecimiento y el enlace cuenta un clic sin datos personales", async () => {
     abrir("cierre");
-    const enlace = await screen.findByRole("link", { name: "Escribir por WhatsApp" });
+    const enlaces = await screen.findAllByRole("link", { name: "Escribir por WhatsApp" });
+    const enlace = enlaces.at(-1);
+    if (!enlace) throw new Error("Falta WhatsApp de acompañamiento");
     fireEvent.click(enlace);
     await waitFor(() => expect(mocks.insert).toHaveBeenCalledWith({ empresa: "prueba", perfil: "A" }));
     fireEvent.click(screen.getByRole("button", { name: "5 estrellas" }));

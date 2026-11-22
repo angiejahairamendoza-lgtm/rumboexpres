@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Finanzas } from "./rumbo-data";
-import type { Habilidad, Semana } from "./rumbo-ai.functions";
+import { RutaSchema, HabilidadSchema, type Habilidad, type RutaResultado } from "./rumbo-output";
 
 export type Estado = {
   pantalla: string;
@@ -23,7 +23,7 @@ export type Estado = {
   frase: string;
   finanzas: Finanzas | null;
   finanzasSaltado: boolean;
-  ruta: Semana[] | null;
+  ruta: RutaResultado | null;
   rutaFecha: string | null;
   calificacion: number | null;
 };
@@ -44,7 +44,18 @@ export function leerGuardado(raw: string | null, ahora = Date.now()): Partial<Es
   try {
     const g = JSON.parse(raw) as { t?: number; s?: Partial<Estado> };
     if (typeof g.t !== "number" || !g.s || ahora - g.t > VENCE_MS) return null;
-    return g.s;
+    const guardado = { ...g.s };
+    // Keep answers and the editable phrase; only recompute outputs from the old format.
+    if (guardado.ruta && !RutaSchema.safeParse(guardado.ruta).success) {
+      guardado.ruta = null;
+      if (guardado.pantalla === "cierre") guardado.pantalla = "ruta";
+    }
+    if (guardado.habilidades?.some((h) => !HabilidadSchema.safeParse(h).success)) {
+      guardado.habilidades = null;
+      guardado.ruta = null;
+      if (["habilidades", "finanzas", "finanzasRes", "ruta", "cierre"].includes(guardado.pantalla ?? "")) guardado.pantalla = "tareas";
+    }
+    return guardado;
   } catch { return null; }
 }
 type Ctx = { s: Estado; set: (p: Partial<Estado>) => void; reset: () => void; listo: boolean };
