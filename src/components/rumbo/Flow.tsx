@@ -551,7 +551,8 @@ function Cierre({ empresa, onReset, onWhatsApp }: { empresa: string | null; onRe
   return (
     <>
       <Titulo>Tu plan RUMBO</Titulo>
-      <div className="space-y-4">
+      <div className="mt-4"><Button variant="hero" size="xl" onClick={bajar} disabled={pdf}>{pdf ? <Loader2 className="animate-spin" /> : <Download />} Descargar mi ruta (PDF)</Button></div>
+      <div className="mt-4 space-y-4">
         <Bloque t={`Perfil: ${D.PERFIL_NOMBRE[d.perfil]}`}>{D.perfilTexto(d.perfil, d.economico)}</Bloque>
         {s.frase && <p className="rounded-2xl bg-primary/20 p-4 text-lg font-extrabold">{s.frase}</p>}
         <Bloque t="Intereses">{d.interes}<Fuente texto={D.FUENTES.intereses} /></Bloque>
